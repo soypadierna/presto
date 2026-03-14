@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/utils/dark_mode_helper.dart';
 import '../../domain/expense_model.dart';
 import '../report_provider.dart';
 
@@ -61,7 +62,7 @@ class ExpenseTile extends StatelessWidget {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: Colors.red.shade50,
+                  color: DarkModeHelper.expenseIconBackground(context),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
@@ -104,9 +105,7 @@ class ExpenseTile extends StatelessWidget {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.red.shade600,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red.shade600),
             child: const Text('Eliminar'),
           ),
         ],
@@ -116,10 +115,10 @@ class ExpenseTile extends StatelessWidget {
 
   Future<void> _showEditDialog(BuildContext context) async {
     final provider = context.read<ReportProvider>();
-    final descController =
-        TextEditingController(text: expense.description);
-    final amountController =
-        TextEditingController(text: expense.amount.toStringAsFixed(0));
+    final descController = TextEditingController(text: expense.description);
+    final amountController = TextEditingController(
+      text: expense.amount.toStringAsFixed(0),
+    );
     final formKey = GlobalKey<FormState>();
 
     await showDialog(
@@ -186,7 +185,9 @@ class ExpenseTile extends StatelessWidget {
   }
 
   String _formatAmount(double amount) {
-    return amount.toStringAsFixed(0).replaceAllMapped(
+    return amount
+        .toStringAsFixed(0)
+        .replaceAllMapped(
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (m) => '${m[1]},',
         );

@@ -72,7 +72,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     setState(() => _currentIndex = index);
                   },
                   destinations: [
-                    // Tab Hoy con badge de pendientes
                     NavigationDestination(
                       icon: Badge(
                         isLabelVisible: todayProvider.pendingCount > 0,

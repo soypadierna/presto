@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../domain/today_client.dart';
 import '../today_provider.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/utils/dark_mode_helper.dart';
 
 class TodayClientTile extends StatelessWidget {
   final TodayClient todayClient;
@@ -11,8 +12,6 @@ class TodayClientTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     // Si ya está registrado solo permitir long press para deshacer
     if (!todayClient.isPending) {
       return GestureDetector(
@@ -150,7 +149,7 @@ class TodayClientTile extends StatelessWidget {
           Text(
             Formatters.formatAmount(todayClient.payment!.amount),
             style: TextStyle(
-              color: Colors.green.shade700,
+              color: Colors.green.shade400,
               fontWeight: FontWeight.w700,
               fontSize: 15,
             ),
@@ -172,7 +171,7 @@ class TodayClientTile extends StatelessWidget {
         Text(
           'No dio',
           style: TextStyle(
-            color: Colors.red.shade600,
+            color: Colors.red.shade400,
             fontWeight: FontWeight.w600,
             fontSize: 13,
           ),
@@ -180,7 +179,7 @@ class TodayClientTile extends StatelessWidget {
         Text(
           'hold para deshacer',
           style: TextStyle(
-            color: Colors.red.shade300,
+            color: Colors.red.shade400,
             fontSize: 10,
           ),
         ),
@@ -360,27 +359,28 @@ class TodayClientTile extends StatelessWidget {
     }
   }
 
+  // Colores adaptados al modo oscuro
   Color _borderColor(BuildContext context) {
-    if (todayClient.isPaid) return Colors.green.shade300;
-    if (todayClient.isSkipped) return Colors.red.shade300;
+    if (todayClient.isPaid) return DarkModeHelper.paidBorder(context);
+    if (todayClient.isSkipped) return DarkModeHelper.skippedBorder(context);
     return Theme.of(context).colorScheme.outline.withOpacity(0.2);
   }
 
   Color _backgroundColor(BuildContext context) {
-    if (todayClient.isPaid) return Colors.green.shade50;
-    if (todayClient.isSkipped) return Colors.red.shade50;
+    if (todayClient.isPaid) return DarkModeHelper.paidBackground(context);
+    if (todayClient.isSkipped) return DarkModeHelper.skippedBackground(context);
     return Theme.of(context).colorScheme.surface;
   }
 
   Color _iconBackgroundColor(BuildContext context) {
-    if (todayClient.isPaid) return Colors.green.shade100;
-    if (todayClient.isSkipped) return Colors.red.shade100;
+    if (todayClient.isPaid) return DarkModeHelper.paidIconBackground(context);
+    if (todayClient.isSkipped) return DarkModeHelper.skippedIconBackground(context);
     return Theme.of(context).colorScheme.primary.withOpacity(0.1);
   }
 
   Color _iconColor(BuildContext context) {
-    if (todayClient.isPaid) return Colors.green.shade700;
-    if (todayClient.isSkipped) return Colors.red.shade700;
+    if (todayClient.isPaid) return Colors.green.shade400;
+    if (todayClient.isSkipped) return Colors.red.shade400;
     return Theme.of(context).colorScheme.primary;
   }
 
