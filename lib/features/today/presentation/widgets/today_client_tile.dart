@@ -1,0 +1,396 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../domain/today_client.dart';
+import '../today_provider.dart';
+
+class TodayClientTile extends StatelessWidget {
+  final TodayClient todayClient;
+
+  const TodayClientTile({super.key, required this.todayClient});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Dismissible(
+      key: Key('today_${todayClient.client.id}'),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.endToStart) {
+          await _showSkippedDialog(context);
+        } else {
+          await _showPaymentDialog(context);
+        }
+        return false;
+      },
+      background: _buildSwipeBackground(
+        color: Colors.green.shade500,
+        icon: Icons.attach_money,
+        label: 'Pagó',
+        alignment: Alignment.centerLeft,
+      ),
+      secondaryBackground: _buildSwipeBackground(
+        color: Colors.red.shade500,
+        icon: Icons.money_off_outlined,
+        label: 'No dio',
+        alignment: Alignment.centerRight,
+      ),
+      child: GestureDetector(
+        onLongPress: todayClient.isPending
+            ? null
+            : () => _showUndoConfirmation(context),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: _borderColor(context),
+              width: 1.5,
+            ),
+            color: _backgroundColor(context),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                // Ícono de estado
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: _iconBackgroundColor(context),
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                  child: Icon(
+                    _statusIcon(),
+                    color: _iconColor(context),
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // Info del cliente
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        todayClient.client.name,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      _buildSubtitle(context),
+                    ],
+                  ),
+                ),
+
+                // Estado badge
+                _buildStatusBadge(context),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubtitle(BuildContext context) {
+    final theme = Theme.of(context);
+    final subtitleStyle = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurface.withOpacity(0.6),
+    );
+
+    if (todayClient.isPaid) {
+      return Text(
+        todayClient.payment?.note?.isNotEmpty == true
+            ? todayClient.payment!.note!
+            : 'Cobro registrado',
+        style: subtitleStyle,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    if (todayClient.isSkipped) {
+      return Text(
+        todayClient.payment?.note?.isNotEmpty == true
+            ? todayClient.payment!.note!
+            : 'Sin justificación',
+        style: subtitleStyle?.copyWith(
+          fontStyle: FontStyle.italic,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    return Text(
+      '₡${_formatAmount(todayClient.client.credit)}',
+      style: subtitleStyle,
+    );
+  }
+
+  Widget _buildStatusBadge(BuildContext context) {
+    if (todayClient.isPending) {
+      return const SizedBox.shrink();
+    }
+
+    if (todayClient.isPaid) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            '₡${_formatAmount(todayClient.payment!.amount)}',
+            style: TextStyle(
+              color: Colors.green.shade700,
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
+            ),
+          ),
+          Text(
+            'hold para deshacer',
+            style: TextStyle(
+              color: Colors.green.shade400,
+              fontSize: 10,
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (todayClient.isSkipped) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            'No dio',
+            style: TextStyle(
+              color: Colors.red.shade600,
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
+          ),
+          Text(
+            'hold para deshacer',
+            style: TextStyle(
+              color: Colors.red.shade300,
+              fontSize: 10,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildSwipeBackground({
+    required Color color,
+    required IconData icon,
+    required String label,
+    required Alignment alignment,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: Colors.white, size: 26),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showPaymentDialog(BuildContext context) async {
+    final provider = context.read<TodayProvider>();
+    final amountController = TextEditingController(
+      text: todayClient.client.credit.toStringAsFixed(0),
+    );
+    final noteController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Cobro — ${todayClient.client.name}'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Monto',
+                  prefixText: '₡ ',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Ingresa el monto';
+                  if (double.tryParse(v) == null || double.parse(v) <= 0) {
+                    return 'Monto inválido';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: noteController,
+                decoration: const InputDecoration(
+                  labelText: 'Nota (opcional)',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 2,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                provider.registerPayment(
+                  todayClient,
+                  double.parse(amountController.text),
+                  noteController.text.trim().isEmpty
+                      ? null
+                      : noteController.text.trim(),
+                );
+                Navigator.pop(ctx);
+              }
+            },
+            child: const Text('Registrar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showSkippedDialog(BuildContext context) async {
+    final provider = context.read<TodayProvider>();
+    final justificationController = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('No dio — ${todayClient.client.name}'),
+        content: TextField(
+          controller: justificationController,
+          decoration: const InputDecoration(
+            labelText: 'Justificación (opcional)',
+            hintText: 'Ej: No estaba en casa',
+            border: OutlineInputBorder(),
+          ),
+          maxLines: 3,
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              provider.registerSkipped(
+                todayClient,
+                justificationController.text.trim().isEmpty
+                    ? null
+                    : justificationController.text.trim(),
+              );
+              Navigator.pop(ctx);
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red.shade600,
+            ),
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showUndoConfirmation(BuildContext context) async {
+    final provider = context.read<TodayProvider>();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Deshacer registro'),
+        content: Text(
+          '¿Deshacer el registro de ${todayClient.client.name}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Deshacer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await provider.undoPayment(todayClient);
+    }
+  }
+
+  Color _borderColor(BuildContext context) {
+    if (todayClient.isPaid) return Colors.green.shade300;
+    if (todayClient.isSkipped) return Colors.red.shade300;
+    return Theme.of(context).colorScheme.outline.withOpacity(0.2);
+  }
+
+  Color _backgroundColor(BuildContext context) {
+    if (todayClient.isPaid) return Colors.green.shade50;
+    if (todayClient.isSkipped) return Colors.red.shade50;
+    return Theme.of(context).colorScheme.surface;
+  }
+
+  Color _iconBackgroundColor(BuildContext context) {
+    if (todayClient.isPaid) return Colors.green.shade100;
+    if (todayClient.isSkipped) return Colors.red.shade100;
+    return Theme.of(context).colorScheme.primary.withOpacity(0.1);
+  }
+
+  Color _iconColor(BuildContext context) {
+    if (todayClient.isPaid) return Colors.green.shade700;
+    if (todayClient.isSkipped) return Colors.red.shade700;
+    return Theme.of(context).colorScheme.primary;
+  }
+
+  IconData _statusIcon() {
+    if (todayClient.isPaid) return Icons.check_circle_outline;
+    if (todayClient.isSkipped) return Icons.cancel_outlined;
+    return Icons.person_outline;
+  }
+
+  String _formatAmount(double amount) {
+    return amount.toStringAsFixed(0).replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (m) => '${m[1]},',
+        );
+  }
+}
