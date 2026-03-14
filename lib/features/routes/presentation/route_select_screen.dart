@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../clients/presentation/client_list_screen.dart';
+import '../../clients/presentation/client_provider.dart';
 import '../domain/route_model.dart';
 import 'route_provider.dart';
 import 'widgets/route_card.dart';
@@ -103,16 +105,16 @@ class RouteSelectScreen extends StatelessWidget {
   }
 
   void _navigateToRoute(BuildContext context, RouteModel route) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => Scaffold(
-          appBar: AppBar(title: Text(route.name)),
-          body: const Center(child: Text('Pantalla principal de la ruta')),
-        ),
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => ChangeNotifierProvider(
+        create: (_) => ClientProvider(),
+        child: ClientListScreen(route: route),
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _showAddDialog(BuildContext context) {
     final controller = TextEditingController();
