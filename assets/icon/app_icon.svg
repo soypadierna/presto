@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Círculo gris suave -->
+  <rect width="1024" height="1024" fill="#1A1A1A"/>
+
+  <!-- Símbolo ₡ en blanco -->
+  <text
+    x="512"
+    y="680"
+    text-anchor="middle"
+    font-family="'Rubik', 'Nunito', Arial Rounded MT Bold, sans-serif"
+    font-size="520"
+    font-weight="bold"
+    fill="#FFFFFF"
+  >₡</text>
+</svg>

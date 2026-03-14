@@ -9,6 +9,9 @@ class ClientProvider extends ChangeNotifier {
   bool _isLoading = false;
   String _currentRouteId = '';
 
+  // Callback que se llama cuando hay cambios en clientes
+  VoidCallback? onClientsChanged;
+
   List<ClientModel> get clients => _clients;
   bool get isLoading => _isLoading;
   String get currentRouteId => _currentRouteId;
@@ -30,10 +33,11 @@ class ClientProvider extends ChangeNotifier {
 
   Future<void> addClient(ClientModel client) async {
     try {
-      // Asignar posición al final de la lista
       final position = _clients.length;
       await _repository.insertClient(client.copyWith(position: position));
       await loadClients(_currentRouteId);
+      // Notificar cambio para que TodayProvider se refresque
+      onClientsChanged?.call();
     } catch (e) {
       debugPrint('Error agregando cliente: $e');
     }
@@ -43,6 +47,7 @@ class ClientProvider extends ChangeNotifier {
     try {
       await _repository.updateClient(client);
       await loadClients(_currentRouteId);
+      onClientsChanged?.call();
     } catch (e) {
       debugPrint('Error actualizando cliente: $e');
     }
@@ -52,6 +57,8 @@ class ClientProvider extends ChangeNotifier {
     try {
       await _repository.deleteClient(id);
       await loadClients(_currentRouteId);
+      // Notificar cambio inmediatamente
+      onClientsChanged?.call();
     } catch (e) {
       debugPrint('Error eliminando cliente: $e');
     }
@@ -59,14 +66,11 @@ class ClientProvider extends ChangeNotifier {
 
   Future<void> reorderClients(int oldIndex, int newIndex) async {
     try {
-      // Ajustar índice para ReorderableListView
       if (newIndex > oldIndex) newIndex--;
-
       final client = _clients.removeAt(oldIndex);
       _clients.insert(newIndex, client);
       notifyListeners();
 
-      // Actualizar posiciones en la base de datos
       for (int i = 0; i < _clients.length; i++) {
         await _repository.updateClientPosition(_clients[i].id, i);
       }

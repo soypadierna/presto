@@ -103,67 +103,177 @@ class _StatsScreenState extends State<StatsScreen>
   }
 
   Widget _buildMonthSummaryCard(BuildContext context, MonthSummary month) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final monthName = _monthName(month.month);
+  final theme = Theme.of(context);
+  final isDark = theme.brightness == Brightness.dark;
+  final monthName = _monthName(month.month);
 
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colorScheme.primary,
-            colorScheme.primary.withOpacity(0.8),
+  return Container(
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: isDark
+            ? [
+                const Color(0xFF2C2C2C),
+                const Color(0xFF1E1E1E),
+              ]
+            : [
+                const Color(0xFF212121),
+                const Color(0xFF424242),
+              ],
+      ),
+      borderRadius: BorderRadius.circular(18),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$monthName ${month.year}',
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: Colors.white.withOpacity(0.7),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          Formatters.formatAmount(month.netTotal),
+          style: theme.textTheme.headlineMedium?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            _buildMonthStatChip(
+              label: 'Cobrado',
+              value: Formatters.formatAmount(month.totalCollected),
+              color: Colors.white.withOpacity(0.9),
+            ),
+            const SizedBox(width: 10),
+            _buildMonthStatChip(
+              label: 'Gastos',
+              value: Formatters.formatAmount(month.totalExpenses),
+              color: Colors.red.shade300,
+            ),
+            const SizedBox(width: 10),
+            _buildMonthStatChip(
+              label: 'Días',
+              value: '${month.daysWorked}',
+              color: Colors.white.withOpacity(0.9),
+            ),
           ],
         ),
-        borderRadius: BorderRadius.circular(18),
+      ],
+    ),
+  );
+}
+
+Widget _buildBarChart(BuildContext context, MonthSummary month) {
+  final theme = Theme.of(context);
+  final colorScheme = theme.colorScheme;
+  final isDark = theme.brightness == Brightness.dark;
+
+  if (month.days.isEmpty) return const SizedBox.shrink();
+
+  final maxNet = month.days
+      .map((d) => d.netTotal.abs())
+      .reduce((a, b) => a > b ? a : b);
+
+  return Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: colorScheme.surface,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(
+        color: colorScheme.outline.withOpacity(0.15),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '$monthName ${month.year}',
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: colorScheme.onPrimary.withOpacity(0.8),
-              fontWeight: FontWeight.w500,
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Neto por día',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 140,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: month.days.map((day) {
+              final ratio = maxNet > 0
+                  ? (day.netTotal.abs() / maxNet).clamp(0.05, 1.0)
+                  : 0.05;
+              final barHeight = 120 * ratio;
+              final isPositive = day.netTotal >= 0;
+              final date = DateTime.parse(day.date);
+
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => _navigateToDayDetail(context, day),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          height: barHeight,
+                          decoration: BoxDecoration(
+                            // Gris oscuro para positivo,
+                            // rojo funcional para negativo
+                            color: isPositive
+                                ? (isDark
+                                    ? const Color(0xFFBDBDBD)
+                                    : const Color(0xFF424242))
+                                : Colors.red.shade400,
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(4),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${date.day}',
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: colorScheme.onSurface.withOpacity(0.5),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildLegendItem(
+              context: context,
+              color: isDark
+                  ? const Color(0xFFBDBDBD)
+                  : const Color(0xFF424242),
+              label: 'Positivo',
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            Formatters.formatAmount(month.netTotal),
-            style: theme.textTheme.headlineMedium?.copyWith(
-              color: colorScheme.onPrimary,
-              fontWeight: FontWeight.w800,
+            const SizedBox(width: 16),
+            _buildLegendItem(
+              context: context,
+              color: Colors.red.shade400,
+              label: 'Negativo',
             ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _buildMonthStatChip(
-                label: 'Cobrado',
-                value: Formatters.formatAmount(month.totalCollected),
-                color: Colors.white.withOpacity(0.9),
-              ),
-              const SizedBox(width: 10),
-              _buildMonthStatChip(
-                label: 'Gastos',
-                value: Formatters.formatAmount(month.totalExpenses),
-                color: Colors.red.shade200,
-              ),
-              const SizedBox(width: 10),
-              _buildMonthStatChip(
-                label: 'Días',
-                value: '${month.daysWorked}',
-                color: Colors.white.withOpacity(0.9),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+          ],
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildMonthStatChip({
     required String label,
@@ -192,105 +302,6 @@ class _StatsScreenState extends State<StatsScreen>
               color: color.withOpacity(0.8),
               fontSize: 10,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBarChart(BuildContext context, MonthSummary month) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    if (month.days.isEmpty) return const SizedBox.shrink();
-
-    final maxNet = month.days
-        .map((d) => d.netTotal.abs())
-        .reduce((a, b) => a > b ? a : b);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.outline.withOpacity(0.15),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Neto por día',
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 140,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: month.days.map((day) {
-                final ratio = maxNet > 0
-                    ? (day.netTotal.abs() / maxNet).clamp(0.05, 1.0)
-                    : 0.05;
-                final barHeight = 120 * ratio;
-                final isPositive = day.netTotal >= 0;
-                final date = DateTime.parse(day.date);
-
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () => _navigateToDayDetail(context, day),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          // Tooltip con monto al hacer tap
-                          Container(
-                            height: barHeight,
-                            decoration: BoxDecoration(
-                              color: isPositive
-                                  ? colorScheme.primary.withOpacity(0.8)
-                                  : Colors.red.shade400,
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(4),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${date.day}',
-                            style: TextStyle(
-                              fontSize: 9,
-                              color: colorScheme.onSurface.withOpacity(0.5),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildLegendItem(
-                context: context,
-                color: colorScheme.primary,
-                label: 'Positivo',
-              ),
-              const SizedBox(width: 16),
-              _buildLegendItem(
-                context: context,
-                color: Colors.red.shade400,
-                label: 'Negativo',
-              ),
-            ],
           ),
         ],
       ),

@@ -1,12 +1,12 @@
 name: presto
-description: "A new Flutter project."
+description: App local para gestión de préstamos y cobros
 
 publish_to: 'none' 
 
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.9.2
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -21,13 +21,43 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   shared_preferences: ^2.5.4
+  file_picker: ^10.3.10
+  flutter_native_splash: ^2.4.7
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
+  flutter_launcher_icons: ^0.13.1
   flutter_lints: ^5.0.0
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  min_sdk_android: 21
+
+  image_path: "assets/icon/app_icon.png"
+
+  adaptive_icon_background: "#1A1A1A"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  
+  web:
+    generate: false
+
+flutter_native_splash:
+  color: "#1A1A1A"
+  color_dark: "#1A1A1A"
+  image: assets/splash/splash_logo.png
+  image_dark: assets/splash/splash_logo.png
+  android_12:
+    color: "#1A1A1A"
+    color_dark: "#1A1A1A"
+    image: assets/splash/splash_logo.png
+  fullscreen: false
 
 flutter:
   uses-material-design: true
   generate: true
+
+  assets:
+    - assets/icon/
+    - assets/splash/

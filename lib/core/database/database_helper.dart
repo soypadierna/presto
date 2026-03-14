@@ -86,4 +86,24 @@ class DatabaseHelper {
       )
     ''');
   }
-}
+
+  /// Cierra la conexión a la base de datos
+  Future<void> closeDatabase() async {
+    if (_database != null) {
+      await _database!.close();
+      _database = null;
+    }
+  }
+
+  /// Retorna la ruta del archivo de la base de datos
+  Future<String> getDatabasePath() async {
+    final dbPath = await getDatabasesPath();
+    return join(dbPath, 'presto.db');
+  }
+
+  /// Reinicializa la base de datos (usado después de importar respaldo)
+  Future<void> reinitialize() async {
+    await closeDatabase();
+    _database = await _initDB();
+  }
+} 

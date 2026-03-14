@@ -19,6 +19,7 @@ class RouteCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -55,10 +56,12 @@ class RouteCard extends StatelessWidget {
         child: GestureDetector(
           onLongPress: onEdit,
           child: Card(
-            elevation: 2,
-            shadowColor: colorScheme.primary.withOpacity(0.2),
+            elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: colorScheme.outline.withOpacity(0.3),
+              ),
             ),
             child: InkWell(
               onTap: onTap,
@@ -67,13 +70,19 @@ class RouteCard extends StatelessWidget {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
+                  // Gradiente en escala de grises
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      colorScheme.primary,
-                      colorScheme.primary.withOpacity(0.8),
-                    ],
+                    colors: isDark
+                        ? [
+                            const Color(0xFF2C2C2C),
+                            const Color(0xFF212121),
+                          ]
+                        : [
+                            const Color(0xFF212121),
+                            const Color(0xFF424242),
+                          ],
                   ),
                 ),
                 child: Row(
@@ -82,12 +91,12 @@ class RouteCard extends StatelessWidget {
                       width: 56,
                       height: 56,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.route_outlined,
-                        color: colorScheme.onPrimary,
+                        color: Colors.white,
                         size: 28,
                       ),
                     ),
@@ -99,7 +108,7 @@ class RouteCard extends StatelessWidget {
                           Text(
                             route.name,
                             style: theme.textTheme.titleLarge?.copyWith(
-                              color: colorScheme.onPrimary,
+                              color: Colors.white,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -107,7 +116,7 @@ class RouteCard extends StatelessWidget {
                           Text(
                             'Toca para entrar',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onPrimary.withOpacity(0.7),
+                              color: Colors.white.withOpacity(0.6),
                             ),
                           ),
                         ],
@@ -115,7 +124,7 @@ class RouteCard extends StatelessWidget {
                     ),
                     Icon(
                       Icons.arrow_forward_ios_rounded,
-                      color: colorScheme.onPrimary.withOpacity(0.7),
+                      color: Colors.white.withOpacity(0.6),
                       size: 18,
                     ),
                   ],
@@ -134,7 +143,7 @@ class RouteCard extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Eliminar ruta'),
         content: Text(
-          '¿Estás seguro de que deseas eliminar "${route.name}"? Esta acción no se puede deshacer.',
+          '¿Estás seguro de que deseas eliminar "${route.name}"?',
         ),
         actions: [
           TextButton(

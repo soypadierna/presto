@@ -19,7 +19,10 @@ class ClientListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final typeColor = Formatters.paymentTypeColor(client.paymentType);
+    final typeColor = Formatters.paymentTypeColorAdaptive(
+      client.paymentType,
+      context,
+    );
 
     return Dismissible(
       key: Key('client_${client.id}'),
@@ -41,23 +44,20 @@ class ClientListTile extends StatelessWidget {
         icon: Icons.edit_outlined,
         label: 'Editar',
         alignment: Alignment.centerLeft,
+        foreground: theme.colorScheme.onPrimary,
       ),
       secondaryBackground: _buildSwipeBackground(
         color: theme.colorScheme.error,
         icon: Icons.delete_outline,
         label: 'Eliminar',
         alignment: Alignment.centerRight,
+        foreground: theme.colorScheme.onError,
       ),
       child: InkWell(
-        // Tap normal navega al historial
         onTap: () => _navigateToHistory(context),
         borderRadius: BorderRadius.circular(14),
         child: Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-          elevation: 1,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
           child: Padding(
             padding:
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -68,8 +68,11 @@ class ClientListTile extends StatelessWidget {
                   width: 46,
                   height: 46,
                   decoration: BoxDecoration(
-                    color: typeColor.withOpacity(0.12),
+                    color: typeColor.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: typeColor.withOpacity(0.2),
+                    ),
                   ),
                   child: Icon(
                     Formatters.paymentTypeIcon(client.paymentType),
@@ -97,31 +100,29 @@ class ClientListTile extends StatelessWidget {
                             Formatters.formatAmount(client.credit),
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: theme.colorScheme.onSurface
-                                  .withOpacity(0.7),
+                                  .withOpacity(0.6),
                             ),
                           ),
                           const SizedBox(width: 8),
-                          _buildTypeChip(typeColor),
+                          _buildTypeChip(context, typeColor),
                         ],
                       ),
                     ],
                   ),
                 ),
 
-                // Flecha historial + drag handle
+                // Flecha + drag handle
                 Column(
                   children: [
                     Icon(
                       Icons.chevron_right,
-                      color:
-                          theme.colorScheme.onSurface.withOpacity(0.3),
+                      color: theme.colorScheme.onSurface.withOpacity(0.3),
                       size: 18,
                     ),
                     const SizedBox(height: 4),
                     Icon(
                       Icons.drag_handle_rounded,
-                      color:
-                          theme.colorScheme.onSurface.withOpacity(0.3),
+                      color: theme.colorScheme.onSurface.withOpacity(0.3),
                       size: 20,
                     ),
                   ],
@@ -134,13 +135,13 @@ class ClientListTile extends StatelessWidget {
     );
   }
 
-  Widget _buildTypeChip(Color color) {
+  Widget _buildTypeChip(BuildContext context, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withOpacity(0.08),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withOpacity(0.25)),
       ),
       child: Text(
         Formatters.paymentTypeLabel(client.paymentType),
@@ -158,6 +159,7 @@ class ClientListTile extends StatelessWidget {
     required IconData icon,
     required String label,
     required Alignment alignment,
+    required Color foreground,
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
@@ -170,12 +172,12 @@ class ClientListTile extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: Colors.white, size: 24),
+          Icon(icon, color: foreground, size: 24),
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: foreground,
               fontSize: 11,
               fontWeight: FontWeight.w500,
             ),
@@ -227,7 +229,7 @@ class ClientListTile extends StatelessWidget {
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.red.shade600,
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
             child: const Text('Eliminar'),
           ),

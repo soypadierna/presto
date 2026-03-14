@@ -51,17 +51,42 @@ class Formatters {
     }
   }
 
-  /// Color para el tipo de cobro
+  /// Colores en escala de grises para el tipo de cobro
   static Color paymentTypeColor(PaymentType type) {
     switch (type) {
       case PaymentType.daily:
-        return Colors.green.shade600;
+        return const Color(0xFF212121); // casi negro
       case PaymentType.weekly:
-        return Colors.blue.shade600;
+        return const Color(0xFF424242); // gris muy oscuro
       case PaymentType.biweekly:
-        return Colors.orange.shade600;
+        return const Color(0xFF616161); // gris oscuro
       case PaymentType.monthly:
-        return Colors.purple.shade600;
+        return const Color(0xFF757575); // gris medio
     }
+  }
+
+  /// Colores en escala de grises para dark mode
+  static Color paymentTypeColorDark(PaymentType type) {
+    switch (type) {
+      case PaymentType.daily:
+        return const Color(0xFFEEEEEE); // casi blanco
+      case PaymentType.weekly:
+        return const Color(0xFFBDBDBD); // gris claro
+      case PaymentType.biweekly:
+        return const Color(0xFF9E9E9E); // gris medio claro
+      case PaymentType.monthly:
+        return const Color(0xFF757575); // gris medio
+    }
+  }
+
+  /// Retorna el color correcto según el brightness
+  static Color paymentTypeColorAdaptive(
+    PaymentType type,
+    BuildContext context,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark
+        ? paymentTypeColorDark(type)
+        : paymentTypeColor(type);
   }
 }

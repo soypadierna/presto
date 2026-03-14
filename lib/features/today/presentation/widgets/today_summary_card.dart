@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../today_provider.dart';
+import '../../../../core/utils/formatters.dart';
 
 class TodaySummaryCard extends StatelessWidget {
   const TodaySummaryCard({super.key});
@@ -8,7 +9,7 @@ class TodaySummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Consumer<TodayProvider>(
       builder: (context, provider, _) {
@@ -16,18 +17,24 @@ class TodaySummaryCard extends StatelessWidget {
           margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
+            // Gradiente en escala de grises
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                colorScheme.primary,
-                colorScheme.primary.withOpacity(0.8),
-              ],
+              colors: isDark
+                  ? [
+                      const Color(0xFF2C2C2C),
+                      const Color(0xFF1E1E1E),
+                    ]
+                  : [
+                      const Color(0xFF212121),
+                      const Color(0xFF424242),
+                    ],
             ),
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: colorScheme.primary.withOpacity(0.3),
+                color: Colors.black.withOpacity(0.2),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -39,36 +46,36 @@ class TodaySummaryCard extends StatelessWidget {
               Text(
                 'Total cobrado',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onPrimary.withOpacity(0.8),
+                  color: Colors.white.withOpacity(0.7),
                 ),
               ),
               const SizedBox(height: 4),
               Text(
-                '₡${_formatAmount(provider.totalCollected)}',
+                Formatters.formatAmount(provider.totalCollected),
                 style: theme.textTheme.headlineMedium?.copyWith(
-                  color: colorScheme.onPrimary,
+                  color: Colors.white,
                   fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 14),
               Row(
                 children: [
+                  // Verde funcional — estado de pago exitoso
                   _buildChip(
-                    context: context,
                     label: '${provider.paidCount} pagaron',
                     icon: Icons.check_circle_outline,
                     color: Colors.green.shade300,
                   ),
                   const SizedBox(width: 8),
+                  // Rojo funcional — estado de no pago
                   _buildChip(
-                    context: context,
                     label: '${provider.skippedCount} no dieron',
                     icon: Icons.cancel_outlined,
                     color: Colors.red.shade300,
                   ),
                   const SizedBox(width: 8),
+                  // Gris neutro — pendientes
                   _buildChip(
-                    context: context,
                     label: '${provider.pendingCount} pendientes',
                     icon: Icons.schedule_outlined,
                     color: Colors.white.withOpacity(0.6),
@@ -83,7 +90,6 @@ class TodaySummaryCard extends StatelessWidget {
   }
 
   Widget _buildChip({
-    required BuildContext context,
     required String label,
     required IconData icon,
     required Color color,
@@ -91,7 +97,7 @@ class TodaySummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: Colors.white.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -110,12 +116,5 @@ class TodaySummaryCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _formatAmount(double amount) {
-    return amount.toStringAsFixed(0).replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (m) => '${m[1]},',
-        );
   }
 }

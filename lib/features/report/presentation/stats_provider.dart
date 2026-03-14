@@ -9,14 +9,14 @@ class StatsProvider extends ChangeNotifier {
   List<DaySummary> _recentDays = [];
   MonthSummary? _currentMonth;
   bool _isLoading = false;
-  String _currentRouteId = '';
+  // String _currentRouteId = '';
 
   List<DaySummary> get recentDays => _recentDays;
   MonthSummary? get currentMonth => _currentMonth;
   bool get isLoading => _isLoading;
 
   Future<void> loadStats(String routeId, {DateTime? date}) async {
-    _currentRouteId = routeId;
+    // _currentRouteId = routeId;
     _isLoading = true;
     notifyListeners();
 
