@@ -9,51 +9,67 @@ class RouteSelectScreen extends StatelessWidget {
   const RouteSelectScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Presto',
-          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 24),
-        ),
-        centerTitle: false,
-        elevation: 0,
-      ),
-      body: Consumer<RouteProvider>(
-        builder: (context, provider, _) {
-          if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (provider.routes.isEmpty) {
-            return _buildEmptyState(context);
-          }
-
-          return RefreshIndicator(
-            onRefresh: provider.loadRoutes,
-            child: ListView.builder(
-              padding: const EdgeInsets.only(top: 8, bottom: 80),
-              itemCount: provider.routes.length,
-              itemBuilder: (context, index) {
-                final route = provider.routes[index];
-                return RouteCard(
-                  route: route,
-                  onTap: () => _navigateToRoute(context, route),
-                  onEdit: () => _showEditDialog(context, provider, route),
-                  onDelete: () => provider.deleteRoute(route.id),
-                );
-              },
+Widget build(BuildContext context) {
+  // Escuchar errores del provider
+  return Consumer<RouteProvider>(
+    builder: (context, provider, _) {
+      // Mostrar error si existe
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (provider.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(provider.errorMessage!),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           );
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddDialog(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Nueva ruta'),
-      ),
-    );
-  }
+          provider.clearError();
+        }
+      });
+
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text(
+            'Presto',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 24),
+          ),
+          centerTitle: false,
+          elevation: 0,
+        ),
+        body: provider.isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : provider.routes.isEmpty
+                ? _buildEmptyState(context)
+                : RefreshIndicator(
+                    onRefresh: provider.loadRoutes,
+                    child: ListView.builder(
+                      padding:
+                          const EdgeInsets.only(top: 8, bottom: 80),
+                      itemCount: provider.routes.length,
+                      itemBuilder: (context, index) {
+                        final route = provider.routes[index];
+                        return RouteCard(
+                          route: route,
+                          onTap: () => _navigateToRoute(context, route),
+                          onEdit: () =>
+                              _showEditDialog(context, provider, route),
+                          onDelete: () => provider.deleteRoute(route.id),
+                        );
+                      },
+                    ),
+                  ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => _showAddDialog(context),
+          icon: const Icon(Icons.add),
+          label: const Text('Nueva ruta'),
+        ),
+      );
+    },
+  );
+}
 
   Widget _buildEmptyState(BuildContext context) {
     final theme = Theme.of(context);

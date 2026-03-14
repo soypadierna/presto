@@ -2,18 +2,44 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:intl/intl.dart';
 import '../../routes/domain/route_model.dart';
 import 'report_provider.dart';
 import '../../today/presentation/today_provider.dart';
 import 'widgets/report_summary_card.dart';
 import 'widgets/expense_tile.dart';
 import '../domain/report_generator.dart';
+import '../../../../core/utils/formatters.dart';
 
-class ReportScreen extends StatelessWidget {
+class ReportScreen extends StatefulWidget {
   final RouteModel route;
 
   const ReportScreen({super.key, required this.route});
+
+  @override
+  State<ReportScreen> createState() => _ReportScreenState();
+}
+
+class _ReportScreenState extends State<ReportScreen> {
+  late TextEditingController _baseController;
+
+  @override
+  void initState() {
+    super.initState();
+    _baseController = TextEditingController();
+    // Sincronizar controller cuando cargue el provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<ReportProvider>();
+      if (provider.baseAmount > 0) {
+        _baseController.text = provider.baseAmount.toStringAsFixed(0);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _baseController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +54,7 @@ class ReportScreen extends StatelessWidget {
             const Text('Informe del día'),
             Consumer<ReportProvider>(
               builder: (_, provider, __) => Text(
-                _formatDate(provider.selectedDate),
+                Formatters.formatDate(provider.selectedDate),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurface.withOpacity(0.6),
                 ),
@@ -43,21 +69,20 @@ class ReportScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
+          // Sincronizar base cuando cambie el provider
+          if (reportProvider.baseAmount > 0 &&
+              _baseController.text.isEmpty) {
+            _baseController.text =
+                reportProvider.baseAmount.toStringAsFixed(0);
+          }
+
           return ListView(
             padding: const EdgeInsets.only(bottom: 32),
             children: [
-              // Base del día
               _buildBaseSection(context, reportProvider),
-
-              // Resumen financiero
               const ReportSummaryCard(),
-
-              // Gastos
               _buildExpensesSection(context, reportProvider),
-
               const SizedBox(height: 24),
-
-              // Botones de acción
               _buildActionButtons(context, reportProvider),
             ],
           );
@@ -71,12 +96,6 @@ class ReportScreen extends StatelessWidget {
     ReportProvider provider,
   ) {
     final theme = Theme.of(context);
-    final baseController = TextEditingController(
-      text: provider.baseAmount > 0
-          ? provider.baseAmount.toStringAsFixed(0)
-          : '',
-    );
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Column(
@@ -93,7 +112,7 @@ class ReportScreen extends StatelessWidget {
             children: [
               Expanded(
                 child: TextField(
-                  controller: baseController,
+                  controller: _baseController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     hintText: 'Ingresa la base del día',
@@ -111,7 +130,7 @@ class ReportScreen extends StatelessWidget {
               const SizedBox(width: 10),
               FilledButton(
                 onPressed: () {
-                  final amount = double.tryParse(baseController.text);
+                  final amount = double.tryParse(_baseController.text);
                   if (amount != null && amount >= 0) {
                     provider.saveBase(amount);
                     FocusScope.of(context).unfocus();
@@ -140,7 +159,6 @@ class ReportScreen extends StatelessWidget {
     ReportProvider provider,
   ) {
     final theme = Theme.of(context);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -156,7 +174,8 @@ class ReportScreen extends StatelessWidget {
                 ),
               ),
               TextButton.icon(
-                onPressed: () => _showAddExpenseDialog(context, provider),
+                onPressed: () =>
+                    _showAddExpenseDialog(context, provider),
                 icon: const Icon(Icons.add, size: 18),
                 label: const Text('Agregar'),
               ),
@@ -165,7 +184,8 @@ class ReportScreen extends StatelessWidget {
         ),
         if (provider.expenses.isEmpty)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -198,18 +218,13 @@ class ReportScreen extends StatelessWidget {
     ReportProvider reportProvider,
   ) {
     final todayProvider = context.read<TodayProvider>();
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          // Botón copiar
           OutlinedButton.icon(
-            onPressed: () => _copyReport(
-              context,
-              reportProvider,
-              todayProvider,
-            ),
+            onPressed: () =>
+                _copyReport(context, reportProvider, todayProvider),
             icon: const Icon(Icons.copy_outlined),
             label: const Text('Copiar informe'),
             style: OutlinedButton.styleFrom(
@@ -220,13 +235,9 @@ class ReportScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          // Botón compartir
           FilledButton.icon(
-            onPressed: () => _shareReport(
-              context,
-              reportProvider,
-              todayProvider,
-            ),
+            onPressed: () =>
+                _shareReport(context, reportProvider, todayProvider),
             icon: const Icon(Icons.share_outlined),
             label: const Text('Compartir informe'),
             style: FilledButton.styleFrom(
@@ -246,7 +257,7 @@ class ReportScreen extends StatelessWidget {
     TodayProvider todayProvider,
   ) {
     return ReportGenerator.generate(
-      routeName: route.name,
+      routeName: widget.route.name,
       date: reportProvider.selectedDate,
       todayClients: todayProvider.todayClients,
       expenses: reportProvider.expenses,
@@ -266,7 +277,8 @@ class ReportScreen extends StatelessWidget {
         SnackBar(
           content: const Row(
             children: [
-              Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+              Icon(Icons.check_circle_outline,
+                  color: Colors.white, size: 18),
               SizedBox(width: 8),
               Text('Informe copiado al portapapeles'),
             ],
@@ -287,11 +299,10 @@ class ReportScreen extends StatelessWidget {
     TodayProvider todayProvider,
   ) async {
     final text = _generateReport(reportProvider, todayProvider);
-    await Share.share(text, subject: 'Informe Presto — ${route.name}');
-  }
-
-  String _formatDate(DateTime date) {
-    return DateFormat("EEEE d 'de' MMMM, yyyy", 'es').format(date);
+    await Share.share(
+      text,
+      subject: 'Informe Presto — ${widget.route.name}',
+    );
   }
 
   Future<void> _showAddExpenseDialog(
@@ -334,7 +345,8 @@ class ReportScreen extends StatelessWidget {
                 ),
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Requerido';
-                  if (double.tryParse(v) == null || double.parse(v) <= 0) {
+                  if (double.tryParse(v) == null ||
+                      double.parse(v) <= 0) {
                     return 'Monto inválido';
                   }
                   return null;

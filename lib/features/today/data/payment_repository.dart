@@ -77,4 +77,20 @@ class PaymentRepository {
       throw Exception('Error al eliminar pago: $e');
     }
   }
+
+  /// Retorna todos los pagos históricos de un cliente ordenados por fecha desc
+  Future<List<PaymentModel>> getPaymentsByClient(String clientId) async {
+    try {
+      final db = await _db.database;
+      final result = await db.query(
+        'payments',
+        where: 'client_id = ?',
+        whereArgs: [clientId],
+        orderBy: 'payment_date DESC',
+      );
+      return result.map((map) => PaymentModel.fromMap(map)).toList();
+    } catch (e) {
+      throw Exception('Error al obtener historial de pagos: $e');
+    }
+  }
 }

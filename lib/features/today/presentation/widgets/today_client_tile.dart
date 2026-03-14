@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../domain/today_client.dart';
 import '../today_provider.dart';
+import '../../../../core/utils/formatters.dart';
 
 class TodayClientTile extends StatelessWidget {
   final TodayClient todayClient;
@@ -12,6 +13,15 @@ class TodayClientTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    // Si ya está registrado solo permitir long press para deshacer
+    if (!todayClient.isPending) {
+      return GestureDetector(
+        onLongPress: () => _showUndoConfirmation(context),
+        child: _buildTileContent(context),
+      );
+    }
+
+    // Pendiente: habilitar swipe
     return Dismissible(
       key: Key('today_${todayClient.client.id}'),
       confirmDismiss: (direction) async {
@@ -34,62 +44,63 @@ class TodayClientTile extends StatelessWidget {
         label: 'No dio',
         alignment: Alignment.centerRight,
       ),
-      child: GestureDetector(
-        onLongPress: todayClient.isPending
-            ? null
-            : () => _showUndoConfirmation(context),
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: _borderColor(context),
-              width: 1.5,
-            ),
-            color: _backgroundColor(context),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
-              children: [
-                // Ícono de estado
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: _iconBackgroundColor(context),
-                    borderRadius: BorderRadius.circular(11),
-                  ),
-                  child: Icon(
-                    _statusIcon(),
-                    color: _iconColor(context),
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 12),
+      child: _buildTileContent(context),
+    );
+  }
 
-                // Info del cliente
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        todayClient.client.name,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      _buildSubtitle(context),
-                    ],
-                  ),
-                ),
+  Widget _buildTileContent(BuildContext context) {
+    final theme = Theme.of(context);
 
-                // Estado badge
-                _buildStatusBadge(context),
-              ],
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: _borderColor(context),
+          width: 1.5,
+        ),
+        color: _backgroundColor(context),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            // Ícono estado
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: _iconBackgroundColor(context),
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Icon(
+                _statusIcon(),
+                color: _iconColor(context),
+                size: 22,
+              ),
             ),
-          ),
+            const SizedBox(width: 12),
+
+            // Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    todayClient.client.name,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  _buildSubtitle(context),
+                ],
+              ),
+            ),
+
+            // Badge de estado
+            _buildStatusBadge(context),
+          ],
         ),
       ),
     );
@@ -117,31 +128,27 @@ class TodayClientTile extends StatelessWidget {
         todayClient.payment?.note?.isNotEmpty == true
             ? todayClient.payment!.note!
             : 'Sin justificación',
-        style: subtitleStyle?.copyWith(
-          fontStyle: FontStyle.italic,
-        ),
+        style: subtitleStyle?.copyWith(fontStyle: FontStyle.italic),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       );
     }
 
     return Text(
-      '₡${_formatAmount(todayClient.client.credit)}',
+      Formatters.formatAmount(todayClient.client.credit),
       style: subtitleStyle,
     );
   }
 
   Widget _buildStatusBadge(BuildContext context) {
-    if (todayClient.isPending) {
-      return const SizedBox.shrink();
-    }
+    if (todayClient.isPending) return const SizedBox.shrink();
 
     if (todayClient.isPaid) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
-            '₡${_formatAmount(todayClient.payment!.amount)}',
+            Formatters.formatAmount(todayClient.payment!.amount),
             style: TextStyle(
               color: Colors.green.shade700,
               fontWeight: FontWeight.w700,
@@ -159,30 +166,26 @@ class TodayClientTile extends StatelessWidget {
       );
     }
 
-    if (todayClient.isSkipped) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            'No dio',
-            style: TextStyle(
-              color: Colors.red.shade600,
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          'No dio',
+          style: TextStyle(
+            color: Colors.red.shade600,
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
           ),
-          Text(
-            'hold para deshacer',
-            style: TextStyle(
-              color: Colors.red.shade300,
-              fontSize: 10,
-            ),
+        ),
+        Text(
+          'hold para deshacer',
+          style: TextStyle(
+            color: Colors.red.shade300,
+            fontSize: 10,
           ),
-        ],
-      );
-    }
-
-    return const SizedBox.shrink();
+        ),
+      ],
+    );
   }
 
   Widget _buildSwipeBackground({
@@ -385,12 +388,5 @@ class TodayClientTile extends StatelessWidget {
     if (todayClient.isPaid) return Icons.check_circle_outline;
     if (todayClient.isSkipped) return Icons.cancel_outlined;
     return Icons.person_outline;
-  }
-
-  String _formatAmount(double amount) {
-    return amount.toStringAsFixed(0).replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (m) => '${m[1]},',
-        );
   }
 }

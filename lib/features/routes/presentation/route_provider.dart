@@ -7,18 +7,24 @@ class RouteProvider extends ChangeNotifier {
 
   List<RouteModel> _routes = [];
   bool _isLoading = false;
+  String? _errorMessage;
 
   List<RouteModel> get routes => _routes;
   bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
 
   RouteProvider() {
     loadRoutes();
   }
 
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
+  }
+
   Future<void> loadRoutes() async {
     _isLoading = true;
     notifyListeners();
-
     try {
       _routes = await _repository.getAllRoutes();
     } catch (e) {
@@ -52,7 +58,8 @@ class RouteProvider extends ChangeNotifier {
       await _repository.deleteRoute(id);
       await loadRoutes();
     } catch (e) {
-      debugPrint('Error eliminando ruta: $e');
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
     }
   }
 }

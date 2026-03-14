@@ -35,40 +35,25 @@ class TodayProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Obtener clientes programados para hoy
       final clients = await _clientRepository.getClientsForToday(
         routeId,
         _selectedDate,
       );
 
-      // Obtener pagos del día
       final dateStr = _formatDate(_selectedDate);
       final payments = await _paymentRepository.getPaymentsByDate(
         routeId,
         dateStr,
       );
 
-      // Combinar clientes con sus pagos
+      // Corrección: usar where + firstOrNull en lugar de firstWhere con orElse
       _todayClients = clients.map((client) {
-        final payment = payments.firstWhere(
-          (p) => p.clientId == client.id,
-          orElse: () => PaymentModel(
-            id: '',
-            clientId: '',
-            routeId: '',
-            amount: 0,
-            status: PaymentStatus.paid,
-            paymentDate: '',
-            createdAt: '',
-          ),
-        );
+        final matchingPayments = payments.where((p) => p.clientId == client.id);
+        final payment = matchingPayments.isNotEmpty
+            ? matchingPayments.first
+            : null;
 
-        // Si no hay pago real, dejarlo como null
-        final hasPayment = payments.any((p) => p.clientId == client.id);
-        return TodayClient(
-          client: client,
-          payment: hasPayment ? payment : null,
-        );
+        return TodayClient(client: client, payment: payment);
       }).toList();
     } catch (e) {
       debugPrint('Error cargando lista del día: $e');
