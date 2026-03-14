@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'core/theme/app_theme.dart';
 import 'features/routes/presentation/route_provider.dart';
 import 'features/routes/presentation/route_select_screen.dart';
 
@@ -21,7 +20,6 @@ class PrestoApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Presto',
         debugShowCheckedModeBanner: false,
-        // theme: AppTheme.lightTheme,
         home: const RouteSelectScreen(),
       ),
     );
