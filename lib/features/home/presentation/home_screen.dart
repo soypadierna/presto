@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:presto/features/report/presentation/stats_provider.dart';
 import 'package:provider/provider.dart';
 import '../../../features/routes/domain/route_model.dart';
 import '../../../features/clients/presentation/client_list_screen.dart';
@@ -21,16 +22,8 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
   final List<({IconData icon, IconData activeIcon, String label})> _tabs = [
-    (
-      icon: Icons.today_outlined,
-      activeIcon: Icons.today,
-      label: 'Hoy',
-    ),
-    (
-      icon: Icons.people_outlined,
-      activeIcon: Icons.people,
-      label: 'Clientes',
-    ),
+    (icon: Icons.today_outlined, activeIcon: Icons.today, label: 'Hoy'),
+    (icon: Icons.people_outlined, activeIcon: Icons.people, label: 'Clientes'),
     (
       icon: Icons.bar_chart_outlined,
       activeIcon: Icons.bar_chart,
@@ -46,11 +39,13 @@ class _HomeScreenState extends State<HomeScreen> {
           create: (_) => ClientProvider()..loadClients(widget.route.id),
         ),
         ChangeNotifierProvider(
-          create: (_) =>
-              TodayProvider()..loadTodayClients(widget.route.id),
+          create: (_) => TodayProvider()..loadTodayClients(widget.route.id),
         ),
         ChangeNotifierProvider(
           create: (_) => ReportProvider()..loadReport(widget.route.id),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => StatsProvider()..loadStats(widget.route.id),
         ),
       ],
       child: Builder(

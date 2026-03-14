@@ -1,4 +1,6 @@
 import 'package:intl/intl.dart';
+import 'package:presto/features/report/domain/day_summary.dart';
+import 'package:presto/features/today/domain/payment_model.dart';
 import '../../today/domain/today_client.dart';
 import '../domain/expense_model.dart';
 import '../domain/daily_base_model.dart';
@@ -102,4 +104,50 @@ class ReportGenerator {
     if (text.isEmpty) return text;
     return text[0].toUpperCase() + text.substring(1);
   }
+
+  /// Genera el texto del informe desde un DaySummary
+static String generateFromSummary({
+  required String routeName,
+  required DaySummary summary,
+}) {
+  final buffer = StringBuffer();
+  final date = DateTime.parse(summary.date);
+  final dateStr = DateFormat("EEEE d 'de' MMMM, yyyy", 'es').format(date);
+
+  buffer.writeln('PRESTO — Informe del día');
+  buffer.writeln(_capitalize(dateStr));
+  buffer.writeln('Ruta: $routeName');
+  buffer.writeln();
+  buffer.writeln('BASE: ${_formatAmount(summary.baseAmount)}');
+  buffer.writeln();
+  buffer.writeln('COBROS:');
+
+  if (summary.payments.isEmpty) {
+    buffer.writeln('  (Sin registros)');
+  } else {
+    for (int i = 0; i < summary.payments.length; i++) {
+      final pwc = summary.payments[i];
+      final isPaid = pwc.payment.status == PaymentStatus.paid;
+      final num = '${i + 1}.';
+      final value = isPaid
+          ? _formatAmount(pwc.payment.amount)
+          : 'No dio';
+      buffer.writeln(_formatLine(num, pwc.clientName, value));
+    }
+  }
+
+  buffer.writeln();
+  buffer.writeln('TOTAL COBRADO: ${_formatAmount(summary.totalCollected)}');
+
+  if (summary.totalExpenses > 0) {
+    buffer.writeln();
+    buffer.writeln('TOTAL GASTOS: ${_formatAmount(summary.totalExpenses)}');
+  }
+
+  buffer.writeln();
+  buffer.writeln('─' * 32);
+  buffer.writeln('NETO: ${_formatAmount(summary.netTotal)}');
+
+  return buffer.toString();
+}
 }

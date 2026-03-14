@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:presto/features/report/presentation/stats_provider.dart';
+import 'package:presto/features/report/presentation/stats_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../routes/domain/route_model.dart';
@@ -62,6 +64,21 @@ class _ReportScreenState extends State<ReportScreen> {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.bar_chart_outlined),
+            tooltip: 'Estadísticas',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ChangeNotifierProvider(
+                  create: (_) => StatsProvider()..loadStats(widget.route.id),
+                  child: StatsScreen(route: widget.route),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: Consumer<ReportProvider>(
         builder: (context, reportProvider, _) {
@@ -70,10 +87,8 @@ class _ReportScreenState extends State<ReportScreen> {
           }
 
           // Sincronizar base cuando cambie el provider
-          if (reportProvider.baseAmount > 0 &&
-              _baseController.text.isEmpty) {
-            _baseController.text =
-                reportProvider.baseAmount.toStringAsFixed(0);
+          if (reportProvider.baseAmount > 0 && _baseController.text.isEmpty) {
+            _baseController.text = reportProvider.baseAmount.toStringAsFixed(0);
           }
 
           return ListView(
@@ -91,10 +106,7 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  Widget _buildBaseSection(
-    BuildContext context,
-    ReportProvider provider,
-  ) {
+  Widget _buildBaseSection(BuildContext context, ReportProvider provider) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -154,10 +166,7 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  Widget _buildExpensesSection(
-    BuildContext context,
-    ReportProvider provider,
-  ) {
+  Widget _buildExpensesSection(BuildContext context, ReportProvider provider) {
     final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -174,8 +183,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 ),
               ),
               TextButton.icon(
-                onPressed: () =>
-                    _showAddExpenseDialog(context, provider),
+                onPressed: () => _showAddExpenseDialog(context, provider),
                 icon: const Icon(Icons.add, size: 18),
                 label: const Text('Agregar'),
               ),
@@ -184,8 +192,7 @@ class _ReportScreenState extends State<ReportScreen> {
         ),
         if (provider.expenses.isEmpty)
           Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -206,9 +213,7 @@ class _ReportScreenState extends State<ReportScreen> {
             ),
           )
         else
-          ...provider.expenses.map(
-            (expense) => ExpenseTile(expense: expense),
-          ),
+          ...provider.expenses.map((expense) => ExpenseTile(expense: expense)),
       ],
     );
   }
@@ -277,8 +282,7 @@ class _ReportScreenState extends State<ReportScreen> {
         SnackBar(
           content: const Row(
             children: [
-              Icon(Icons.check_circle_outline,
-                  color: Colors.white, size: 18),
+              Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
               SizedBox(width: 8),
               Text('Informe copiado al portapapeles'),
             ],
@@ -299,10 +303,7 @@ class _ReportScreenState extends State<ReportScreen> {
     TodayProvider todayProvider,
   ) async {
     final text = _generateReport(reportProvider, todayProvider);
-    await Share.share(
-      text,
-      subject: 'Informe Presto — ${widget.route.name}',
-    );
+    await Share.share(text, subject: 'Informe Presto — ${widget.route.name}');
   }
 
   Future<void> _showAddExpenseDialog(
@@ -345,8 +346,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 ),
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Requerido';
-                  if (double.tryParse(v) == null ||
-                      double.parse(v) <= 0) {
+                  if (double.tryParse(v) == null || double.parse(v) <= 0) {
                     return 'Monto inválido';
                   }
                   return null;
