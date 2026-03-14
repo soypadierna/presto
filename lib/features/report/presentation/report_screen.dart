@@ -1,0 +1,367 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:intl/intl.dart';
+import '../../routes/domain/route_model.dart';
+import 'report_provider.dart';
+import '../../today/presentation/today_provider.dart';
+import 'widgets/report_summary_card.dart';
+import 'widgets/expense_tile.dart';
+import '../domain/report_generator.dart';
+
+class ReportScreen extends StatelessWidget {
+  final RouteModel route;
+
+  const ReportScreen({super.key, required this.route});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Informe del día'),
+            Consumer<ReportProvider>(
+              builder: (_, provider, __) => Text(
+                _formatDate(provider.selectedDate),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: Consumer<ReportProvider>(
+        builder: (context, reportProvider, _) {
+          if (reportProvider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          return ListView(
+            padding: const EdgeInsets.only(bottom: 32),
+            children: [
+              // Base del día
+              _buildBaseSection(context, reportProvider),
+
+              // Resumen financiero
+              const ReportSummaryCard(),
+
+              // Gastos
+              _buildExpensesSection(context, reportProvider),
+
+              const SizedBox(height: 24),
+
+              // Botones de acción
+              _buildActionButtons(context, reportProvider),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildBaseSection(
+    BuildContext context,
+    ReportProvider provider,
+  ) {
+    final theme = Theme.of(context);
+    final baseController = TextEditingController(
+      text: provider.baseAmount > 0
+          ? provider.baseAmount.toStringAsFixed(0)
+          : '',
+    );
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Base del día',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: baseController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    hintText: 'Ingresa la base del día',
+                    prefixText: '₡ ',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              FilledButton(
+                onPressed: () {
+                  final amount = double.tryParse(baseController.text);
+                  if (amount != null && amount >= 0) {
+                    provider.saveBase(amount);
+                    FocusScope.of(context).unfocus();
+                  }
+                },
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Guardar'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExpensesSection(
+    BuildContext context,
+    ReportProvider provider,
+  ) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Gastos',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () => _showAddExpenseDialog(context, provider),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Agregar'),
+              ),
+            ],
+          ),
+        ),
+        if (provider.expenses.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: theme.colorScheme.outline.withOpacity(0.15),
+                ),
+              ),
+              child: Text(
+                'Sin gastos registrados',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+                ),
+              ),
+            ),
+          )
+        else
+          ...provider.expenses.map(
+            (expense) => ExpenseTile(expense: expense),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons(
+    BuildContext context,
+    ReportProvider reportProvider,
+  ) {
+    final todayProvider = context.read<TodayProvider>();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          // Botón copiar
+          OutlinedButton.icon(
+            onPressed: () => _copyReport(
+              context,
+              reportProvider,
+              todayProvider,
+            ),
+            icon: const Icon(Icons.copy_outlined),
+            label: const Text('Copiar informe'),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          // Botón compartir
+          FilledButton.icon(
+            onPressed: () => _shareReport(
+              context,
+              reportProvider,
+              todayProvider,
+            ),
+            icon: const Icon(Icons.share_outlined),
+            label: const Text('Compartir informe'),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _generateReport(
+    ReportProvider reportProvider,
+    TodayProvider todayProvider,
+  ) {
+    return ReportGenerator.generate(
+      routeName: route.name,
+      date: reportProvider.selectedDate,
+      todayClients: todayProvider.todayClients,
+      expenses: reportProvider.expenses,
+      dailyBase: reportProvider.dailyBase,
+    );
+  }
+
+  Future<void> _copyReport(
+    BuildContext context,
+    ReportProvider reportProvider,
+    TodayProvider todayProvider,
+  ) async {
+    final text = _generateReport(reportProvider, todayProvider);
+    await Clipboard.setData(ClipboardData(text: text));
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+              SizedBox(width: 8),
+              Text('Informe copiado al portapapeles'),
+            ],
+          ),
+          backgroundColor: Colors.green.shade600,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _shareReport(
+    BuildContext context,
+    ReportProvider reportProvider,
+    TodayProvider todayProvider,
+  ) async {
+    final text = _generateReport(reportProvider, todayProvider);
+    await Share.share(text, subject: 'Informe Presto — ${route.name}');
+  }
+
+  String _formatDate(DateTime date) {
+    return DateFormat("EEEE d 'de' MMMM, yyyy", 'es').format(date);
+  }
+
+  Future<void> _showAddExpenseDialog(
+    BuildContext context,
+    ReportProvider provider,
+  ) async {
+    final descController = TextEditingController();
+    final amountController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Nuevo gasto'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: descController,
+                autofocus: true,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  labelText: 'Descripción',
+                  hintText: 'Ej: Gasolina',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Requerido' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Monto',
+                  prefixText: '₡ ',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Requerido';
+                  if (double.tryParse(v) == null || double.parse(v) <= 0) {
+                    return 'Monto inválido';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                provider.addExpense(
+                  descController.text.trim(),
+                  double.parse(amountController.text),
+                );
+                Navigator.pop(ctx);
+              }
+            },
+            child: const Text('Agregar'),
+          ),
+        ],
+      ),
+    );
+  }
+}
