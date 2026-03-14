@@ -16,6 +16,9 @@ class PrestoApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        // Solo RouteProvider es global
+        // ClientProvider y TodayProvider se inyectan
+        // localmente en HomeScreen por ruta
         ChangeNotifierProvider(create: (_) => RouteProvider()),
       ],
       child: MaterialApp(

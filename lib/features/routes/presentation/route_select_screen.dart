@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../clients/presentation/client_list_screen.dart';
-import '../../clients/presentation/client_provider.dart';
 import '../domain/route_model.dart';
 import 'route_provider.dart';
 import 'widgets/route_card.dart';
+import '../../home/presentation/home_screen.dart';
 
 class RouteSelectScreen extends StatelessWidget {
   const RouteSelectScreen({super.key});
@@ -104,17 +103,15 @@ class RouteSelectScreen extends StatelessWidget {
     );
   }
 
+  // Navega a HomeScreen con los providers inyectados
   void _navigateToRoute(BuildContext context, RouteModel route) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => ChangeNotifierProvider(
-        create: (_) => ClientProvider(),
-        child: ClientListScreen(route: route),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => HomeScreen(route: route),
       ),
-    ),
-  );
-}
+    );
+  }
 
   void _showAddDialog(BuildContext context) {
     final controller = TextEditingController();
