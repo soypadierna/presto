@@ -275,7 +275,7 @@ class PaymentConfigWidget extends StatelessWidget {
   }) {
     final theme = Theme.of(context);
     return DropdownButtonFormField<int>(
-      value: value,
+      initialValue: value,
       decoration: InputDecoration(
         labelText: label,
         contentPadding: const EdgeInsets.symmetric(

@@ -374,8 +374,9 @@ class TodayClientTile extends StatelessWidget {
 
   Color _iconBackgroundColor(BuildContext context) {
     if (todayClient.isPaid) return DarkModeHelper.paidIconBackground(context);
-    if (todayClient.isSkipped)
+    if (todayClient.isSkipped) {
       return DarkModeHelper.skippedIconBackground(context);
+    }
     return Theme.of(context).colorScheme.primary.withValues(alpha: 0.1);
   }
 
