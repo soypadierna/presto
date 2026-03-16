@@ -32,7 +32,7 @@ class DayDetailScreen extends StatelessWidget {
             Text(
               Formatters.formatShortDate(date),
               style: theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurface.withOpacity(0.6),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -74,7 +74,7 @@ class DayDetailScreen extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.15),
+          color: colorScheme.outline.withValues(alpha: 0.15),
         ),
       ),
       child: Column(
@@ -103,7 +103,7 @@ class DayDetailScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Divider(
-              color: colorScheme.outline.withOpacity(0.2),
+              color: colorScheme.outline.withValues(alpha: 0.2),
             ),
           ),
           Row(
@@ -164,7 +164,7 @@ class DayDetailScreen extends StatelessWidget {
         Text(
           label,
           style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
         Text(
@@ -187,9 +187,9 @@ class DayDetailScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -220,14 +220,14 @@ class DayDetailScreen extends StatelessWidget {
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: colorScheme.outline.withOpacity(0.15),
+            color: colorScheme.outline.withValues(alpha: 0.15),
           ),
         ),
         child: Center(
           child: Text(
             'Sin cobros registrados',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurface.withOpacity(0.5),
+              color: colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
         ),
@@ -303,9 +303,7 @@ class DayDetailScreen extends StatelessWidget {
                       : 'No dio',
                   style: theme.textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: isPaid
-                        ? Colors.green.shade600
-                        : Colors.red.shade600,
+                    color: isPaid ? Colors.green.shade600 : Colors.red.shade600,
                   ),
                 ),
               ],
@@ -331,8 +329,7 @@ class DayDetailScreen extends StatelessWidget {
         SnackBar(
           content: const Row(
             children: [
-              Icon(Icons.check_circle_outline,
-                  color: Colors.white, size: 18),
+              Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
               SizedBox(width: 8),
               Text('Informe copiado al portapapeles'),
             ],

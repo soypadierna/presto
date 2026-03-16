@@ -45,9 +45,7 @@ class _ClientListScreenState extends State<ClientListScreen>
   List<ClientModel> _filterClients(List<ClientModel> clients) {
     if (_searchQuery.isEmpty) return clients;
     return clients
-        .where((c) => c.name
-            .toLowerCase()
-            .contains(_searchQuery.toLowerCase()))
+        .where((c) => c.name.toLowerCase().contains(_searchQuery.toLowerCase()))
         .toList();
   }
 
@@ -65,7 +63,7 @@ class _ClientListScreenState extends State<ClientListScreen>
               builder: (_, provider, __) => Text(
                 '${provider.clients.length} clientes',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ),
@@ -78,8 +76,7 @@ class _ClientListScreenState extends State<ClientListScreen>
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: TextField(
               controller: _searchController,
-              onChanged: (value) =>
-                  setState(() => _searchQuery = value),
+              onChanged: (value) => setState(() => _searchQuery = value),
               decoration: InputDecoration(
                 hintText: 'Buscar cliente...',
                 prefixIcon: const Icon(Icons.search, size: 20),
@@ -126,14 +123,14 @@ class _ClientListScreenState extends State<ClientListScreen>
                           Icons.search_off_rounded,
                           size: 48,
                           color: theme.colorScheme.onSurface
-                              .withOpacity(0.3),
+                              .withValues(alpha: 0.3),
                         ),
                         const SizedBox(height: 12),
                         Text(
                           'Sin resultados para "$_searchQuery"',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.onSurface
-                                .withOpacity(0.5),
+                                .withValues(alpha: 0.5),
                           ),
                         ),
                       ],
@@ -187,7 +184,7 @@ class _ClientListScreenState extends State<ClientListScreen>
               width: 90,
               height: 90,
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -208,7 +205,7 @@ class _ClientListScreenState extends State<ClientListScreen>
               'Agrega tu primer cliente a esta ruta.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: 28),

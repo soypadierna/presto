@@ -108,7 +108,7 @@ class TodayClientTile extends StatelessWidget {
   Widget _buildSubtitle(BuildContext context) {
     final theme = Theme.of(context);
     final subtitleStyle = theme.textTheme.bodySmall?.copyWith(
-      color: theme.colorScheme.onSurface.withOpacity(0.6),
+      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
     );
 
     if (todayClient.isPaid) {
@@ -363,7 +363,7 @@ class TodayClientTile extends StatelessWidget {
   Color _borderColor(BuildContext context) {
     if (todayClient.isPaid) return DarkModeHelper.paidBorder(context);
     if (todayClient.isSkipped) return DarkModeHelper.skippedBorder(context);
-    return Theme.of(context).colorScheme.outline.withOpacity(0.2);
+    return Theme.of(context).colorScheme.outline.withValues(alpha: 0.2);
   }
 
   Color _backgroundColor(BuildContext context) {
@@ -374,8 +374,9 @@ class TodayClientTile extends StatelessWidget {
 
   Color _iconBackgroundColor(BuildContext context) {
     if (todayClient.isPaid) return DarkModeHelper.paidIconBackground(context);
-    if (todayClient.isSkipped) return DarkModeHelper.skippedIconBackground(context);
-    return Theme.of(context).colorScheme.primary.withOpacity(0.1);
+    if (todayClient.isSkipped)
+      return DarkModeHelper.skippedIconBackground(context);
+    return Theme.of(context).colorScheme.primary.withValues(alpha: 0.1);
   }
 
   Color _iconColor(BuildContext context) {

@@ -21,21 +21,21 @@ class _StatsScreenState extends State<StatsScreen>
     with SingleTickerProviderStateMixin, ErrorListenerMixin {
   late TabController _tabController;
 
-@override
-void initState() {
-  super.initState();
-  _tabController = TabController(length: 2, vsync: this);
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    final provider = context.read<StatsProvider>();
-    provider.loadStats(widget.route.id);
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<StatsProvider>();
+      provider.loadStats(widget.route.id);
 
-    // Escuchar errores
-    listenForErrors<StatsProvider>(
-      errorSelector: (p) => p.errorMessage,
-      clearError: provider.clearError,
-    );
-  });
-}
+      // Escuchar errores
+      listenForErrors<StatsProvider>(
+        errorSelector: (p) => p.errorMessage,
+        clearError: provider.clearError,
+      );
+    });
+  }
 
   @override
   void dispose() {
@@ -57,7 +57,7 @@ void initState() {
             Text(
               widget.route.name,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurface.withOpacity(0.6),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -111,177 +111,176 @@ void initState() {
   }
 
   Widget _buildMonthSummaryCard(BuildContext context, MonthSummary month) {
-  final theme = Theme.of(context);
-  final isDark = theme.brightness == Brightness.dark;
-  final monthName = _monthName(month.month);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final monthName = _monthName(month.month);
 
-  return Container(
-    padding: const EdgeInsets.all(18),
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: isDark
-            ? [
-                const Color(0xFF2C2C2C),
-                const Color(0xFF1E1E1E),
-              ]
-            : [
-                const Color(0xFF212121),
-                const Color(0xFF424242),
-              ],
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [
+                  const Color(0xFF2C2C2C),
+                  const Color(0xFF1E1E1E),
+                ]
+              : [
+                  const Color(0xFF212121),
+                  const Color(0xFF424242),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(18),
       ),
-      borderRadius: BorderRadius.circular(18),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '$monthName ${month.year}',
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: Colors.white.withOpacity(0.7),
-            fontWeight: FontWeight.w500,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$monthName ${month.year}',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: Colors.white.withValues(alpha: 0.7),
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          Formatters.formatAmount(month.netTotal),
-          style: theme.textTheme.headlineMedium?.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
+          const SizedBox(height: 4),
+          Text(
+            Formatters.formatAmount(month.netTotal),
+            style: theme.textTheme.headlineMedium?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            _buildMonthStatChip(
-              label: 'Cobrado',
-              value: Formatters.formatAmount(month.totalCollected),
-              color: Colors.white.withOpacity(0.9),
-            ),
-            const SizedBox(width: 10),
-            _buildMonthStatChip(
-              label: 'Gastos',
-              value: Formatters.formatAmount(month.totalExpenses),
-              color: Colors.red.shade300,
-            ),
-            const SizedBox(width: 10),
-            _buildMonthStatChip(
-              label: 'Días',
-              value: '${month.daysWorked}',
-              color: Colors.white.withOpacity(0.9),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
-
-Widget _buildBarChart(BuildContext context, MonthSummary month) {
-  final theme = Theme.of(context);
-  final colorScheme = theme.colorScheme;
-  final isDark = theme.brightness == Brightness.dark;
-
-  if (month.days.isEmpty) return const SizedBox.shrink();
-
-  final maxNet = month.days
-      .map((d) => d.netTotal.abs())
-      .reduce((a, b) => a > b ? a : b);
-
-  return Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: colorScheme.surface,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(
-        color: colorScheme.outline.withOpacity(0.15),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _buildMonthStatChip(
+                label: 'Cobrado',
+                value: Formatters.formatAmount(month.totalCollected),
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
+              const SizedBox(width: 10),
+              _buildMonthStatChip(
+                label: 'Gastos',
+                value: Formatters.formatAmount(month.totalExpenses),
+                color: Colors.red.shade300,
+              ),
+              const SizedBox(width: 10),
+              _buildMonthStatChip(
+                label: 'Días',
+                value: '${month.daysWorked}',
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
+            ],
+          ),
+        ],
       ),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Neto por día',
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 140,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: month.days.map((day) {
-              final ratio = maxNet > 0
-                  ? (day.netTotal.abs() / maxNet).clamp(0.05, 1.0)
-                  : 0.05;
-              final barHeight = 120 * ratio;
-              final isPositive = day.netTotal >= 0;
-              final date = DateTime.parse(day.date);
+    );
+  }
 
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => _navigateToDayDetail(context, day),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Container(
-                          height: barHeight,
-                          decoration: BoxDecoration(
-                            // Gris oscuro para positivo,
-                            // rojo funcional para negativo
-                            color: isPositive
-                                ? (isDark
-                                    ? const Color(0xFFBDBDBD)
-                                    : const Color(0xFF424242))
-                                : Colors.red.shade400,
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(4),
+  Widget _buildBarChart(BuildContext context, MonthSummary month) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    if (month.days.isEmpty) return const SizedBox.shrink();
+
+    final maxNet =
+        month.days.map((d) => d.netTotal.abs()).reduce((a, b) => a > b ? a : b);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.15),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Neto por día',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 140,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: month.days.map((day) {
+                final ratio = maxNet > 0
+                    ? (day.netTotal.abs() / maxNet).clamp(0.05, 1.0)
+                    : 0.05;
+                final barHeight = 120 * ratio;
+                final isPositive = day.netTotal >= 0;
+                final date = DateTime.parse(day.date);
+
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => _navigateToDayDetail(context, day),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Container(
+                            height: barHeight,
+                            decoration: BoxDecoration(
+                              // Gris oscuro para positivo,
+                              // rojo funcional para negativo
+                              color: isPositive
+                                  ? (isDark
+                                      ? const Color(0xFFBDBDBD)
+                                      : const Color(0xFF424242))
+                                  : Colors.red.shade400,
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(4),
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${date.day}',
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: colorScheme.onSurface.withOpacity(0.5),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${date.day}',
+                            style: TextStyle(
+                              fontSize: 9,
+                              color:
+                                  colorScheme.onSurface.withValues(alpha: 0.5),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
+                );
+              }).toList(),
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildLegendItem(
-              context: context,
-              color: isDark
-                  ? const Color(0xFFBDBDBD)
-                  : const Color(0xFF424242),
-              label: 'Positivo',
-            ),
-            const SizedBox(width: 16),
-            _buildLegendItem(
-              context: context,
-              color: Colors.red.shade400,
-              label: 'Negativo',
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildLegendItem(
+                context: context,
+                color:
+                    isDark ? const Color(0xFFBDBDBD) : const Color(0xFF424242),
+                label: 'Positivo',
+              ),
+              const SizedBox(width: 16),
+              _buildLegendItem(
+                context: context,
+                color: Colors.red.shade400,
+                label: 'Negativo',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildMonthStatChip({
     required String label,
@@ -291,7 +290,7 @@ Widget _buildBarChart(BuildContext context, MonthSummary month) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -307,7 +306,7 @@ Widget _buildBarChart(BuildContext context, MonthSummary month) {
           Text(
             label,
             style: TextStyle(
-              color: color.withOpacity(0.8),
+              color: color.withValues(alpha: 0.8),
               fontSize: 10,
             ),
           ),
@@ -336,7 +335,7 @@ Widget _buildBarChart(BuildContext context, MonthSummary month) {
         Text(
           label,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -379,7 +378,7 @@ Widget _buildBarChart(BuildContext context, MonthSummary month) {
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: colorScheme.outline.withOpacity(0.15),
+            color: colorScheme.outline.withValues(alpha: 0.15),
           ),
         ),
         child: Row(
@@ -389,7 +388,7 @@ Widget _buildBarChart(BuildContext context, MonthSummary month) {
               width: 46,
               height: 46,
               decoration: BoxDecoration(
-                color: colorScheme.primary.withOpacity(0.1),
+                color: colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -407,7 +406,7 @@ Widget _buildBarChart(BuildContext context, MonthSummary month) {
                     _shortMonthName(date.month),
                     style: TextStyle(
                       fontSize: 10,
-                      color: colorScheme.primary.withOpacity(0.8),
+                      color: colorScheme.primary.withValues(alpha: 0.8),
                     ),
                   ),
                 ],
@@ -433,7 +432,7 @@ Widget _buildBarChart(BuildContext context, MonthSummary month) {
                     'Cobrado: ${Formatters.formatAmount(day.totalCollected)} · '
                     '${day.paidCount} pagaron',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurface.withOpacity(0.6),
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -456,7 +455,7 @@ Widget _buildBarChart(BuildContext context, MonthSummary month) {
                 Text(
                   'neto',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface.withOpacity(0.4),
+                    color: colorScheme.onSurface.withValues(alpha: 0.4),
                   ),
                 ),
               ],
@@ -464,7 +463,7 @@ Widget _buildBarChart(BuildContext context, MonthSummary month) {
             const SizedBox(width: 6),
             Icon(
               Icons.chevron_right,
-              color: colorScheme.onSurface.withOpacity(0.3),
+              color: colorScheme.onSurface.withValues(alpha: 0.3),
               size: 18,
             ),
           ],
@@ -486,13 +485,13 @@ Widget _buildBarChart(BuildContext context, MonthSummary month) {
           Icon(
             icon,
             size: 64,
-            color: theme.colorScheme.primary.withOpacity(0.3),
+            color: theme.colorScheme.primary.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
           Text(
             message,
             style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.5),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
         ],
@@ -514,16 +513,38 @@ Widget _buildBarChart(BuildContext context, MonthSummary month) {
 
   String _monthName(int month) {
     const names = [
-      '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+      '',
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre',
     ];
     return names[month];
   }
 
   String _shortMonthName(int month) {
     const names = [
-      '', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
+      '',
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
     ];
     return names[month];
   }

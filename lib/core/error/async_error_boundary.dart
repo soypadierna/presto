@@ -29,14 +29,14 @@ class AsyncErrorBoundary extends StatelessWidget {
               Icon(
                 Icons.wifi_off_rounded,
                 size: 48,
-                color: colorScheme.onSurface.withOpacity(0.3),
+                color: colorScheme.onSurface.withValues(alpha: 0.3),
               ),
               const SizedBox(height: 16),
               Text(
                 errorMessage!,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurface.withOpacity(0.6),
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
               if (onRetry != null) ...[

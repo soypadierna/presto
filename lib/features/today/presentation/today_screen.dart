@@ -16,8 +16,7 @@ class TodayScreen extends StatefulWidget {
   State<TodayScreen> createState() => _TodayScreenState();
 }
 
-class _TodayScreenState extends State<TodayScreen>
-    with ErrorListenerMixin {
+class _TodayScreenState extends State<TodayScreen> with ErrorListenerMixin {
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -60,7 +59,7 @@ class _TodayScreenState extends State<TodayScreen>
               builder: (_, provider, __) => Text(
                 _formatDate(provider.selectedDate),
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ),
@@ -120,15 +119,14 @@ class _TodayScreenState extends State<TodayScreen>
                               'Sin resultados para "$_searchQuery"',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: theme.colorScheme.onSurface
-                                    .withOpacity(0.5),
+                                    .withValues(alpha: 0.5),
                               ),
                             ),
                           )
                         : ListView.builder(
                             padding: const EdgeInsets.only(bottom: 24),
                             itemCount: filtered.length,
-                            itemBuilder: (context, index) =>
-                                TodayClientTile(
+                            itemBuilder: (context, index) => TodayClientTile(
                               key: Key(filtered[index].client.id),
                               todayClient: filtered[index],
                             ),
@@ -150,20 +148,20 @@ class _TodayScreenState extends State<TodayScreen>
           Icon(
             Icons.event_available_outlined,
             size: 64,
-            color: theme.colorScheme.primary.withOpacity(0.3),
+            color: theme.colorScheme.primary.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
           Text(
             'Sin cobros para hoy',
             style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.5),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Ningún cliente tiene cobro programado hoy',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.4),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
             ),
           ),
         ],

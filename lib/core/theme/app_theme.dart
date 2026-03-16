@@ -44,7 +44,7 @@ class AppTheme {
         backgroundColor: _lightSurface,
         foregroundColor: _lightPrimary,
         surfaceTintColor: Colors.transparent,
-        shadowColor: Colors.black.withOpacity(0.05),
+        shadowColor: Colors.black.withValues(alpha: 0.05),
       ),
       cardTheme: CardThemeData(
         elevation: 0,
@@ -52,7 +52,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
           side: BorderSide(
-            color: _lightOutline.withOpacity(0.4),
+            color: _lightOutline.withValues(alpha: 0.4),
           ),
         ),
         surfaceTintColor: Colors.transparent,
@@ -64,7 +64,7 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: _lightOutline.withOpacity(0.6)),
+          borderSide: BorderSide(color: _lightOutline.withValues(alpha: 0.6)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -124,7 +124,7 @@ class AppTheme {
         }),
       ),
       dividerTheme: DividerThemeData(
-        color: _lightOutline.withOpacity(0.4),
+        color: _lightOutline.withValues(alpha: 0.4),
         space: 0,
       ),
       chipTheme: ChipThemeData(
@@ -170,7 +170,7 @@ class AppTheme {
         backgroundColor: _darkSurface,
         foregroundColor: _darkPrimary,
         surfaceTintColor: Colors.transparent,
-        shadowColor: Colors.black.withOpacity(0.3),
+        shadowColor: Colors.black.withValues(alpha: 0.3),
       ),
       cardTheme: CardThemeData(
         elevation: 0,
@@ -178,7 +178,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
           side: BorderSide(
-            color: _darkOutline.withOpacity(0.4),
+            color: _darkOutline.withValues(alpha: 0.4),
           ),
         ),
         surfaceTintColor: Colors.transparent,
@@ -190,7 +190,7 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: _darkOutline.withOpacity(0.6)),
+          borderSide: BorderSide(color: _darkOutline.withValues(alpha: 0.6)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -250,7 +250,7 @@ class AppTheme {
         }),
       ),
       dividerTheme: DividerThemeData(
-        color: _darkOutline.withOpacity(0.4),
+        color: _darkOutline.withValues(alpha: 0.4),
         space: 0,
       ),
       chipTheme: ChipThemeData(

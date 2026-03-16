@@ -59,8 +59,7 @@ class ClientListTile extends StatelessWidget {
         child: Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
                 // Ícono tipo de cobro
@@ -68,10 +67,10 @@ class ClientListTile extends StatelessWidget {
                   width: 46,
                   height: 46,
                   decoration: BoxDecoration(
-                    color: typeColor.withOpacity(0.08),
+                    color: typeColor.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: typeColor.withOpacity(0.2),
+                      color: typeColor.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Icon(
@@ -100,7 +99,7 @@ class ClientListTile extends StatelessWidget {
                             Formatters.formatAmount(client.credit),
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: theme.colorScheme.onSurface
-                                  .withOpacity(0.6),
+                                  .withValues(alpha: 0.6),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -116,13 +115,13 @@ class ClientListTile extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.chevron_right,
-                      color: theme.colorScheme.onSurface.withOpacity(0.3),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                       size: 18,
                     ),
                     const SizedBox(height: 4),
                     Icon(
                       Icons.drag_handle_rounded,
-                      color: theme.colorScheme.onSurface.withOpacity(0.3),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                       size: 20,
                     ),
                   ],
@@ -139,9 +138,9 @@ class ClientListTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.25)),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Text(
         Formatters.paymentTypeLabel(client.paymentType),
