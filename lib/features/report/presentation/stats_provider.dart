@@ -10,33 +10,39 @@ class StatsProvider extends ChangeNotifier {
   MonthSummary? _currentMonth;
   bool _isLoading = false;
   // String _currentRouteId = '';
+  String? _errorMessage;
 
   List<DaySummary> get recentDays => _recentDays;
   MonthSummary? get currentMonth => _currentMonth;
   bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
+  }
 
   Future<void> loadStats(String routeId, {DateTime? date}) async {
     // _currentRouteId = routeId;
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
       final now = date ?? DateTime.now();
-
-      // Cargar resumen del mes actual
       _currentMonth = await _repository.getMonthSummary(
         routeId,
         now.year,
         now.month,
       );
 
-      // Cargar últimos 30 días trabajados
       final days = await _repository.getDaysWorked(routeId);
       final recent = days.take(30).toList();
       _recentDays = await Future.wait(
         recent.map((d) => _repository.getDaySummary(routeId, d)),
       );
     } catch (e) {
+      _errorMessage = 'No se pudieron cargar las estadísticas';
       debugPrint('Error cargando estadísticas: $e');
     } finally {
       _isLoading = false;
@@ -45,6 +51,12 @@ class StatsProvider extends ChangeNotifier {
   }
 
   Future<DaySummary> loadDaySummary(String routeId, String date) async {
-    return await _repository.getDaySummary(routeId, date);
+    try {
+      return await _repository.getDaySummary(routeId, date);
+    } catch (e) {
+      _errorMessage = 'No se pudo cargar el detalle del día';
+      notifyListeners();
+      rethrow;
+    }
   }
 }

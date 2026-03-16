@@ -53,7 +53,7 @@ class PaymentConfigWidget extends StatelessWidget {
         Text(
           'Días de cobro',
           style: theme.textTheme.labelLarge?.copyWith(
-            color: colorScheme.onSurface.withOpacity(0.7),
+            color: colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
         const SizedBox(height: 10),
@@ -70,8 +70,7 @@ class PaymentConfigWidget extends StatelessWidget {
                     updated.remove(day['key']);
                   }
                 } else {
-                  updated.add(day[
-                      'key']!);
+                  updated.add(day['key']!);
                 }
                 onChanged({'days': updated});
               },
@@ -85,7 +84,7 @@ class PaymentConfigWidget extends StatelessWidget {
                   border: Border.all(
                     color: isSelected
                         ? colorScheme.primary
-                        : colorScheme.outline.withOpacity(0.4),
+                        : colorScheme.outline.withValues(alpha: 0.4),
                   ),
                 ),
                 child: Center(
@@ -109,7 +108,7 @@ class PaymentConfigWidget extends StatelessWidget {
         Text(
           '${selectedDays.length} día(s) seleccionado(s)',
           style: theme.textTheme.bodySmall?.copyWith(
-            color: colorScheme.onSurface.withOpacity(0.5),
+            color: colorScheme.onSurface.withValues(alpha: 0.5),
           ),
         ),
       ],
@@ -135,7 +134,7 @@ class PaymentConfigWidget extends StatelessWidget {
         Text(
           'Día de cobro',
           style: theme.textTheme.labelLarge?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
         const SizedBox(height: 10),
@@ -157,7 +156,7 @@ class PaymentConfigWidget extends StatelessWidget {
                   border: Border.all(
                     color: isSelected
                         ? theme.colorScheme.primary
-                        : theme.colorScheme.outline.withOpacity(0.4),
+                        : theme.colorScheme.outline.withValues(alpha: 0.4),
                   ),
                 ),
                 child: Center(
@@ -194,7 +193,7 @@ class PaymentConfigWidget extends StatelessWidget {
         Text(
           'Fechas de cobro',
           style: theme.textTheme.labelLarge?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
         const SizedBox(height: 10),
@@ -248,7 +247,7 @@ class PaymentConfigWidget extends StatelessWidget {
         Text(
           'Día de cobro mensual',
           style: theme.textTheme.labelLarge?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
         const SizedBox(height: 10),
@@ -276,7 +275,7 @@ class PaymentConfigWidget extends StatelessWidget {
   }) {
     final theme = Theme.of(context);
     return DropdownButtonFormField<int>(
-      value: value,
+      initialValue: value,
       decoration: InputDecoration(
         labelText: label,
         contentPadding: const EdgeInsets.symmetric(
@@ -286,7 +285,7 @@ class PaymentConfigWidget extends StatelessWidget {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.4),
+            color: theme.colorScheme.outline.withValues(alpha: 0.4),
           ),
         ),
       ),

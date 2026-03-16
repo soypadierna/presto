@@ -8,22 +8,29 @@ class ClientProvider extends ChangeNotifier {
   List<ClientModel> _clients = [];
   bool _isLoading = false;
   String _currentRouteId = '';
-
-  // Callback que se llama cuando hay cambios en clientes
+  String? _errorMessage;
   VoidCallback? onClientsChanged;
 
   List<ClientModel> get clients => _clients;
   bool get isLoading => _isLoading;
   String get currentRouteId => _currentRouteId;
+  String? get errorMessage => _errorMessage;
+
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
+  }
 
   Future<void> loadClients(String routeId) async {
     _currentRouteId = routeId;
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
       _clients = await _repository.getClientsByRoute(routeId);
     } catch (e) {
+      _errorMessage = 'No se pudieron cargar los clientes';
       debugPrint('Error cargando clientes: $e');
     } finally {
       _isLoading = false;
@@ -36,9 +43,10 @@ class ClientProvider extends ChangeNotifier {
       final position = _clients.length;
       await _repository.insertClient(client.copyWith(position: position));
       await loadClients(_currentRouteId);
-      // Notificar cambio para que TodayProvider se refresque
       onClientsChanged?.call();
     } catch (e) {
+      _errorMessage = 'No se pudo crear el cliente';
+      notifyListeners();
       debugPrint('Error agregando cliente: $e');
     }
   }
@@ -49,6 +57,8 @@ class ClientProvider extends ChangeNotifier {
       await loadClients(_currentRouteId);
       onClientsChanged?.call();
     } catch (e) {
+      _errorMessage = 'No se pudo actualizar el cliente';
+      notifyListeners();
       debugPrint('Error actualizando cliente: $e');
     }
   }
@@ -57,9 +67,10 @@ class ClientProvider extends ChangeNotifier {
     try {
       await _repository.deleteClient(id);
       await loadClients(_currentRouteId);
-      // Notificar cambio inmediatamente
       onClientsChanged?.call();
     } catch (e) {
+      _errorMessage = 'No se pudo eliminar el cliente';
+      notifyListeners();
       debugPrint('Error eliminando cliente: $e');
     }
   }
@@ -75,6 +86,8 @@ class ClientProvider extends ChangeNotifier {
         await _repository.updateClientPosition(_clients[i].id, i);
       }
     } catch (e) {
+      _errorMessage = 'No se pudo reordenar los clientes';
+      notifyListeners();
       debugPrint('Error reordenando clientes: $e');
     }
   }

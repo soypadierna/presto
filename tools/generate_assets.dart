@@ -1,4 +1,4 @@
-  import 'dart:io';
+import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
@@ -40,7 +40,7 @@ Future<void> _generateIcon() async {
   canvas.drawCircle(
     const Offset(size / 2, size / 2),
     380,
-    Paint()..color = const Color(0xFF4CAF50).withOpacity(0.12),
+    Paint()..color = const Color(0xFF4CAF50).withValues(alpha: 0.12),
   );
 
   // Símbolo ₡
@@ -131,7 +131,7 @@ Future<void> _generateSplash() async {
   canvas.drawCircle(
     const Offset(size / 2, size / 2 - 30),
     170,
-    Paint()..color = const Color(0xFF4CAF50).withOpacity(0.12),
+    Paint()..color = const Color(0xFF4CAF50).withValues(alpha: 0.12),
   );
 
   // Símbolo ₡

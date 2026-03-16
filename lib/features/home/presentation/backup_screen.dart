@@ -36,10 +36,10 @@ class _BackupScreenState extends State<BackupScreen> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.08),
+              color: colorScheme.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: colorScheme.primary.withOpacity(0.2),
+                color: colorScheme.primary.withValues(alpha: 0.2),
               ),
             ),
             child: Row(
@@ -101,7 +101,7 @@ class _BackupScreenState extends State<BackupScreen> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.15),
+          color: colorScheme.outline.withValues(alpha: 0.15),
         ),
       ),
       child: Column(
@@ -113,7 +113,7 @@ class _BackupScreenState extends State<BackupScreen> {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.1),
+                  color: colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(11),
                 ),
                 child: Icon(
@@ -136,7 +136,7 @@ class _BackupScreenState extends State<BackupScreen> {
                     Text(
                       'Guarda una copia de todos tus datos',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface.withOpacity(0.6),
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
@@ -225,7 +225,7 @@ class _BackupScreenState extends State<BackupScreen> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.15),
+          color: colorScheme.outline.withValues(alpha: 0.15),
         ),
       ),
       child: Column(
@@ -237,7 +237,7 @@ class _BackupScreenState extends State<BackupScreen> {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
+                  color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(11),
                 ),
                 child: Icon(
@@ -260,7 +260,7 @@ class _BackupScreenState extends State<BackupScreen> {
                     Text(
                       'Selecciona un archivo .presto',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface.withOpacity(0.6),
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
@@ -274,10 +274,10 @@ class _BackupScreenState extends State<BackupScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.08),
+              color: Colors.orange.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: Colors.orange.withOpacity(0.3),
+                color: Colors.orange.withValues(alpha: 0.3),
               ),
             ),
             child: Row(
@@ -362,17 +362,17 @@ class _BackupScreenState extends State<BackupScreen> {
     required bool isError,
   }) {
     final color = isError ? Colors.red.shade600 : Colors.green.shade600;
-    final bgColor =
-        isError ? Colors.red.withOpacity(0.08) : Colors.green.withOpacity(0.08);
-    final icon =
-        isError ? Icons.error_outline : Icons.check_circle_outline;
+    final bgColor = isError
+        ? Colors.red.withValues(alpha: 0.08)
+        : Colors.green.withValues(alpha: 0.08);
+    final icon = isError ? Icons.error_outline : Icons.check_circle_outline;
 
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [

@@ -24,10 +24,13 @@ class RouteProvider extends ChangeNotifier {
 
   Future<void> loadRoutes() async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
+
     try {
       _routes = await _repository.getAllRoutes();
     } catch (e) {
+      _errorMessage = 'No se pudieron cargar las rutas';
       debugPrint('Error cargando rutas: $e');
     } finally {
       _isLoading = false;
@@ -40,6 +43,8 @@ class RouteProvider extends ChangeNotifier {
       await _repository.insertRoute(name);
       await loadRoutes();
     } catch (e) {
+      _errorMessage = 'No se pudo crear la ruta';
+      notifyListeners();
       debugPrint('Error agregando ruta: $e');
     }
   }
@@ -49,6 +54,8 @@ class RouteProvider extends ChangeNotifier {
       await _repository.updateRoute(route);
       await loadRoutes();
     } catch (e) {
+      _errorMessage = 'No se pudo actualizar la ruta';
+      notifyListeners();
       debugPrint('Error actualizando ruta: $e');
     }
   }

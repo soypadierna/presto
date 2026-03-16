@@ -34,7 +34,7 @@ class TodaySummaryCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -46,7 +46,7 @@ class TodaySummaryCard extends StatelessWidget {
               Text(
                 'Total cobrado',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                 ),
               ),
               const SizedBox(height: 4),
@@ -78,7 +78,7 @@ class TodaySummaryCard extends StatelessWidget {
                   _buildChip(
                     label: '${provider.pendingCount} pendientes',
                     icon: Icons.schedule_outlined,
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                   ),
                 ],
               ),
@@ -97,7 +97,7 @@ class TodaySummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.12),
+        color: Colors.white.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(

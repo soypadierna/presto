@@ -28,7 +28,7 @@ class SettingsScreen extends StatelessWidget {
                   color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: colorScheme.outline.withOpacity(0.15),
+                    color: colorScheme.outline.withValues(alpha: 0.15),
                   ),
                 ),
                 child: Column(
@@ -44,7 +44,7 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     Divider(
                       height: 1,
-                      color: colorScheme.outline.withOpacity(0.1),
+                      color: colorScheme.outline.withValues(alpha: 0.1),
                     ),
                     _buildThemeOption(
                       context: context,
@@ -56,7 +56,7 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     Divider(
                       height: 1,
-                      color: colorScheme.outline.withOpacity(0.1),
+                      color: colorScheme.outline.withValues(alpha: 0.1),
                     ),
                     _buildThemeOption(
                       context: context,
@@ -81,7 +81,7 @@ class SettingsScreen extends StatelessWidget {
                   color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: colorScheme.outline.withOpacity(0.15),
+                    color: colorScheme.outline.withValues(alpha: 0.15),
                   ),
                 ),
                 child: InkWell(
@@ -103,7 +103,7 @@ class SettingsScreen extends StatelessWidget {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: colorScheme.primary.withOpacity(0.1),
+                            color: colorScheme.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
@@ -124,7 +124,8 @@ class SettingsScreen extends StatelessWidget {
                               Text(
                                 'Exporta o importa tus datos',
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurface.withOpacity(0.5),
+                                  color: colorScheme.onSurface
+                                      .withValues(alpha: 0.5),
                                 ),
                               ),
                             ],
@@ -132,7 +133,7 @@ class SettingsScreen extends StatelessWidget {
                         ),
                         Icon(
                           Icons.chevron_right,
-                          color: colorScheme.onSurface.withOpacity(0.3),
+                          color: colorScheme.onSurface.withValues(alpha: 0.3),
                           size: 20,
                         ),
                       ],
@@ -152,7 +153,7 @@ class SettingsScreen extends StatelessWidget {
                   color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: colorScheme.outline.withOpacity(0.15),
+                    color: colorScheme.outline.withValues(alpha: 0.15),
                   ),
                 ),
                 child: Row(
@@ -161,7 +162,7 @@ class SettingsScreen extends StatelessWidget {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: colorScheme.primary.withOpacity(0.1),
+                        color: colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -183,7 +184,7 @@ class SettingsScreen extends StatelessWidget {
                         Text(
                           'Versión 1.0.0',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurface.withOpacity(0.6),
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
                         ),
                       ],
@@ -238,8 +239,8 @@ class SettingsScreen extends StatelessWidget {
               height: 40,
               decoration: BoxDecoration(
                 color: isSelected
-                    ? colorScheme.primary.withOpacity(0.12)
-                    : colorScheme.onSurface.withOpacity(0.06),
+                    ? colorScheme.primary.withValues(alpha: 0.12)
+                    : colorScheme.onSurface.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -247,7 +248,7 @@ class SettingsScreen extends StatelessWidget {
                 size: 22,
                 color: isSelected
                     ? colorScheme.primary
-                    : colorScheme.onSurface.withOpacity(0.5),
+                    : colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
             const SizedBox(width: 14),
@@ -258,9 +259,8 @@ class SettingsScreen extends StatelessWidget {
                   Text(
                     label,
                     style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.normal,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
                       color: isSelected
                           ? colorScheme.primary
                           : colorScheme.onSurface,
@@ -269,7 +269,7 @@ class SettingsScreen extends StatelessWidget {
                   Text(
                     subtitle,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurface.withOpacity(0.5),
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                 ],
@@ -284,7 +284,7 @@ class SettingsScreen extends StatelessWidget {
             else
               Icon(
                 Icons.circle_outlined,
-                color: colorScheme.onSurface.withOpacity(0.3),
+                color: colorScheme.onSurface.withValues(alpha: 0.3),
                 size: 22,
               ),
           ],

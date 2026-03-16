@@ -1,75 +1,95 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/error/error_listener.dart';
 import '../domain/route_model.dart';
 import 'route_provider.dart';
 import 'widgets/route_card.dart';
 import '../../home/presentation/home_screen.dart';
 
-class RouteSelectScreen extends StatelessWidget {
+class RouteSelectScreen extends StatefulWidget {
   const RouteSelectScreen({super.key});
 
   @override
-Widget build(BuildContext context) {
-  // Escuchar errores del provider
-  return Consumer<RouteProvider>(
-    builder: (context, provider, _) {
-      // Mostrar error si existe
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (provider.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(provider.errorMessage!),
-              backgroundColor: Theme.of(context).colorScheme.error,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          );
-          provider.clearError();
-        }
-      });
-
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text(
-            'Presto',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 24),
-          ),
-          centerTitle: false,
-          elevation: 0,
-        ),
-        body: provider.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : provider.routes.isEmpty
-                ? _buildEmptyState(context)
-                : RefreshIndicator(
-                    onRefresh: provider.loadRoutes,
-                    child: ListView.builder(
-                      padding:
-                          const EdgeInsets.only(top: 8, bottom: 80),
-                      itemCount: provider.routes.length,
-                      itemBuilder: (context, index) {
-                        final route = provider.routes[index];
-                        return RouteCard(
-                          route: route,
-                          onTap: () => _navigateToRoute(context, route),
-                          onEdit: () =>
-                              _showEditDialog(context, provider, route),
-                          onDelete: () => provider.deleteRoute(route.id),
-                        );
-                      },
-                    ),
-                  ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => _showAddDialog(context),
-          icon: const Icon(Icons.add),
-          label: const Text('Nueva ruta'),
-        ),
-      );
-    },
-  );
+  State<RouteSelectScreen> createState() => _RouteSelectScreenState();
 }
+
+class _RouteSelectScreenState extends State<RouteSelectScreen>
+    with ErrorListenerMixin {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<RouteProvider>();
+
+      // Escuchar errores
+      listenForErrors<RouteProvider>(
+        errorSelector: (p) => p.errorMessage,
+        clearError: provider.clearError,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Escuchar errores del provider
+    return Consumer<RouteProvider>(
+      builder: (context, provider, _) {
+        // Mostrar error si existe
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (provider.errorMessage != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(provider.errorMessage!),
+                backgroundColor: Theme.of(context).colorScheme.error,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            );
+            provider.clearError();
+          }
+        });
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text(
+              'Presto',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 24),
+            ),
+            centerTitle: false,
+            elevation: 0,
+          ),
+          body: provider.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : provider.routes.isEmpty
+                  ? _buildEmptyState(context)
+                  : RefreshIndicator(
+                      onRefresh: provider.loadRoutes,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.only(top: 8, bottom: 80),
+                        itemCount: provider.routes.length,
+                        itemBuilder: (context, index) {
+                          final route = provider.routes[index];
+                          return RouteCard(
+                            route: route,
+                            onTap: () => _navigateToRoute(context, route),
+                            onEdit: () =>
+                                _showEditDialog(context, provider, route),
+                            onDelete: () => provider.deleteRoute(route.id),
+                          );
+                        },
+                      ),
+                    ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => _showAddDialog(context),
+            icon: const Icon(Icons.add),
+            label: const Text('Nueva ruta'),
+          ),
+        );
+      },
+    );
+  }
 
   Widget _buildEmptyState(BuildContext context) {
     final theme = Theme.of(context);
@@ -83,7 +103,7 @@ Widget build(BuildContext context) {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -104,7 +124,7 @@ Widget build(BuildContext context) {
               'Crea tu primera ruta para empezar a gestionar tus cobros.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: 32),

@@ -22,7 +22,7 @@ class PaymentTypeSelector extends StatelessWidget {
         Text(
           'Tipo de cobro',
           style: theme.textTheme.labelLarge?.copyWith(
-            color: colorScheme.onSurface.withOpacity(0.7),
+            color: colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
         const SizedBox(height: 10),
@@ -40,20 +40,18 @@ class PaymentTypeSelector extends StatelessWidget {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? colorScheme.primary
-                      : colorScheme.surface,
+                  color: isSelected ? colorScheme.primary : colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isSelected
                         ? colorScheme.primary
-                        : colorScheme.outline.withOpacity(0.4),
+                        : colorScheme.outline.withValues(alpha: 0.4),
                     width: isSelected ? 2 : 1,
                   ),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: colorScheme.primary.withOpacity(0.3),
+                            color: colorScheme.primary.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           )
@@ -68,7 +66,7 @@ class PaymentTypeSelector extends StatelessWidget {
                       size: 20,
                       color: isSelected
                           ? colorScheme.onPrimary
-                          : colorScheme.onSurface.withOpacity(0.6),
+                          : colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -77,9 +75,8 @@ class PaymentTypeSelector extends StatelessWidget {
                         color: isSelected
                             ? colorScheme.onPrimary
                             : colorScheme.onSurface,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.normal,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.normal,
                       ),
                     ),
                   ],

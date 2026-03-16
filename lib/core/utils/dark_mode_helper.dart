@@ -16,7 +16,7 @@ class DarkModeHelper {
   static Color paidBackground(BuildContext context) => adaptColor(
         context: context,
         lightColor: Colors.green.shade50,
-        darkColor: Colors.green.shade900.withOpacity(0.3),
+        darkColor: Colors.green.shade900.withValues(alpha: 0.3),
       );
 
   /// Borde verde para cliente pagado
@@ -30,14 +30,14 @@ class DarkModeHelper {
   static Color paidIconBackground(BuildContext context) => adaptColor(
         context: context,
         lightColor: Colors.green.shade100,
-        darkColor: Colors.green.shade900.withOpacity(0.5),
+        darkColor: Colors.green.shade900.withValues(alpha: 0.5),
       );
 
   /// Rojo suave para fondo de cliente que no dio
   static Color skippedBackground(BuildContext context) => adaptColor(
         context: context,
         lightColor: Colors.red.shade50,
-        darkColor: Colors.red.shade900.withOpacity(0.3),
+        darkColor: Colors.red.shade900.withValues(alpha: 0.3),
       );
 
   /// Borde rojo para cliente que no dio
@@ -51,13 +51,13 @@ class DarkModeHelper {
   static Color skippedIconBackground(BuildContext context) => adaptColor(
         context: context,
         lightColor: Colors.red.shade100,
-        darkColor: Colors.red.shade900.withOpacity(0.5),
+        darkColor: Colors.red.shade900.withValues(alpha: 0.5),
       );
 
   /// Fondo del ícono de gasto
   static Color expenseIconBackground(BuildContext context) => adaptColor(
         context: context,
         lightColor: Colors.red.shade50,
-        darkColor: Colors.red.shade900.withOpacity(0.3),
+        darkColor: Colors.red.shade900.withValues(alpha: 0.3),
       );
 }

@@ -59,7 +59,7 @@ class _ClientHistoryScreenState extends State<ClientHistoryScreen> {
             Text(
               'Historial de pagos',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurface.withOpacity(0.6),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -99,7 +99,7 @@ class _ClientHistoryScreenState extends State<ClientHistoryScreen> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.15),
+          color: colorScheme.outline.withValues(alpha: 0.15),
         ),
       ),
       child: Row(
@@ -150,7 +150,7 @@ class _ClientHistoryScreenState extends State<ClientHistoryScreen> {
         Text(
           label,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -161,7 +161,7 @@ class _ClientHistoryScreenState extends State<ClientHistoryScreen> {
     return Container(
       height: 36,
       width: 1,
-      color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+      color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
     );
   }
 
@@ -177,9 +177,7 @@ class _ClientHistoryScreenState extends State<ClientHistoryScreen> {
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isPaid
-              ? Colors.green.shade200
-              : Colors.red.shade200,
+          color: isPaid ? Colors.green.shade200 : Colors.red.shade200,
           width: 1,
         ),
       ),
@@ -190,18 +188,12 @@ class _ClientHistoryScreenState extends State<ClientHistoryScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: isPaid
-                  ? Colors.green.shade50
-                  : Colors.red.shade50,
+              color: isPaid ? Colors.green.shade50 : Colors.red.shade50,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
-              isPaid
-                  ? Icons.check_circle_outline
-                  : Icons.cancel_outlined,
-              color: isPaid
-                  ? Colors.green.shade600
-                  : Colors.red.shade600,
+              isPaid ? Icons.check_circle_outline : Icons.cancel_outlined,
+              color: isPaid ? Colors.green.shade600 : Colors.red.shade600,
               size: 22,
             ),
           ),
@@ -223,7 +215,7 @@ class _ClientHistoryScreenState extends State<ClientHistoryScreen> {
                   Text(
                     payment.note!,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       fontStyle: FontStyle.italic,
                     ),
                     maxLines: 1,
@@ -236,14 +228,10 @@ class _ClientHistoryScreenState extends State<ClientHistoryScreen> {
 
           // Monto
           Text(
-            isPaid
-                ? Formatters.formatAmount(payment.amount)
-                : 'No dio',
+            isPaid ? Formatters.formatAmount(payment.amount) : 'No dio',
             style: theme.textTheme.bodyLarge?.copyWith(
               fontWeight: FontWeight.w700,
-              color: isPaid
-                  ? Colors.green.shade700
-                  : Colors.red.shade600,
+              color: isPaid ? Colors.green.shade700 : Colors.red.shade600,
             ),
           ),
         ],
@@ -260,13 +248,13 @@ class _ClientHistoryScreenState extends State<ClientHistoryScreen> {
           Icon(
             Icons.history_outlined,
             size: 56,
-            color: theme.colorScheme.primary.withOpacity(0.3),
+            color: theme.colorScheme.primary.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
           Text(
             'Sin historial de pagos',
             style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.5),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
         ],
