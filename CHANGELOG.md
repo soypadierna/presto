@@ -7,6 +7,17 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ## [1.2.0] - 2026-03-15
 
+### Corregido
+- Reemplazar `withOpacity` por `withValues` en todos los archivos
+- Reemplazar `MaterialStateProperty` por `WidgetStateProperty`
+- Reemplazar `MaterialState` por `WidgetState`
+- Reemplazar `background` por `surface` en `ColorScheme`
+- Reemplazar `onBackground` por `onSurface` en `ColorScheme`
+- Reemplazar `surfaceVariant` por `surfaceContainerHighest` en `ColorScheme`
+- Reemplazar `value` por `initialValue` en `payment_config_widget.dart`
+- Agregar llaves en `if` sin bloque en `today_client_tile.dart`
+- Actualizar versión a `1.2.0+3` en `pubspec.yaml`
+
 ### Agregado
 - Manejo global de errores con `ErrorHandler` y `AppErrorWidget`
 - Pantalla de error amigable reemplaza la pantalla roja de Flutter
