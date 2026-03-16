@@ -86,9 +86,13 @@ class ClientModel {
 
     switch (paymentType) {
       case PaymentType.daily:
-        // Lunes a sábado
-        return date.weekday >= DateTime.monday &&
-            date.weekday <= DateTime.saturday;
+        // Si tiene días específicos configurados, respetar esa selección
+        final days = List<String>.from(
+          paymentDays['days'] as List? ??
+              ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
+        );
+        final todayStr = _weekdayToString(date.weekday);
+        return days.contains(todayStr);
 
       case PaymentType.weekly:
         // Solo el día configurado: "mon", "tue", etc.
@@ -117,5 +121,18 @@ class ClientModel {
       'sat': DateTime.saturday,
     };
     return map[day] ?? DateTime.monday;
+  }
+
+  String _weekdayToString(int weekday) {
+    const map = {
+      DateTime.monday: 'mon',
+      DateTime.tuesday: 'tue',
+      DateTime.wednesday: 'wed',
+      DateTime.thursday: 'thu',
+      DateTime.friday: 'fri',
+      DateTime.saturday: 'sat',
+      DateTime.sunday: 'sun',
+    };
+    return map[weekday] ?? 'mon';
   }
 }
