@@ -23,6 +23,7 @@ dependencies:
   shared_preferences: ^2.5.4
   file_picker: ^10.3.10
   flutter_native_splash: ^2.4.7
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:

@@ -1,12 +1,16 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
+/// Singleton que gestiona la conexión a la base de datos SQLite local.
+/// Todas las operaciones de base de datos pasan por esta clase.
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._internal();
   static Database? _database;
 
   DatabaseHelper._internal();
 
+  /// Retorna la instancia activa de la base de datos.
+  /// Si no existe, la inicializa automáticamente.
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDB();
@@ -16,14 +20,10 @@ class DatabaseHelper {
   Future<Database> _initDB() async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'presto.db');
-
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: _createDB,
-    );
+    return await openDatabase(path, version: 1, onCreate: _createDB);
   }
 
+  /// Crea todas las tablas al inicializar la base de datos por primera vez.
   Future<void> _createDB(Database db, int version) async {
     await db.execute('''
       CREATE TABLE routes (
@@ -87,7 +87,8 @@ class DatabaseHelper {
     ''');
   }
 
-  /// Cierra la conexión a la base de datos
+  /// Cierra la conexión activa a la base de datos.
+  /// Usado antes de operaciones de respaldo/restauración.
   Future<void> closeDatabase() async {
     if (_database != null) {
       await _database!.close();
@@ -95,15 +96,16 @@ class DatabaseHelper {
     }
   }
 
-  /// Retorna la ruta del archivo de la base de datos
+  /// Retorna la ruta absoluta del archivo `.db` en el dispositivo.
   Future<String> getDatabasePath() async {
     final dbPath = await getDatabasesPath();
     return join(dbPath, 'presto.db');
   }
 
-  /// Reinicializa la base de datos (usado después de importar respaldo)
+  /// Cierra y reinicializa la conexión.
+  /// Llamado después de importar un respaldo para cargar la nueva DB.
   Future<void> reinitialize() async {
     await closeDatabase();
     _database = await _initDB();
   }
-} 
+}

@@ -1,12 +1,16 @@
 import 'package:intl/intl.dart';
-import 'package:presto/features/report/domain/day_summary.dart';
-import 'package:presto/features/today/domain/payment_model.dart';
+
 import '../../today/domain/today_client.dart';
+import '../../today/domain/payment_model.dart';
 import '../domain/expense_model.dart';
 import '../domain/daily_base_model.dart';
+import '../domain/day_summary.dart';
 
+/// Genera el texto plano del informe del día para compartir o copiar.
+///
+/// El formato es compatible con WhatsApp y cualquier app de mensajería.
 class ReportGenerator {
-  /// Genera el texto del informe del día
+  /// Genera el informe desde los datos en tiempo real del día actual.
   static String generate({
     required String routeName,
     required DateTime date,
@@ -17,52 +21,41 @@ class ReportGenerator {
     final buffer = StringBuffer();
     final dateStr = DateFormat("EEEE d 'de' MMMM, yyyy", 'es').format(date);
 
-    // Calcular totales
     final totalCollected = todayClients
         .where((tc) => tc.isPaid)
         .fold<double>(0, (sum, tc) => sum + (tc.payment?.amount ?? 0));
-
     final totalExpenses =
         expenses.fold<double>(0, (sum, e) => sum + e.amount);
-
     final baseAmount = dailyBase?.amount ?? 0;
     final netTotal = baseAmount + totalCollected - totalExpenses;
 
-    // Encabezado
     buffer.writeln('PRESTO — Informe del día');
     buffer.writeln(_capitalize(dateStr));
     buffer.writeln('Ruta: $routeName');
     buffer.writeln();
-
-    // Base
     buffer.writeln('BASE: ${_formatAmount(baseAmount)}');
     buffer.writeln();
-
-    // Cobros
     buffer.writeln('COBROS:');
-    final paidAndSkipped = todayClients
+
+    final registered = todayClients
         .where((tc) => tc.isPaid || tc.isSkipped)
         .toList();
 
-    if (paidAndSkipped.isEmpty) {
+    if (registered.isEmpty) {
       buffer.writeln('  (Sin registros)');
     } else {
-      for (int i = 0; i < paidAndSkipped.length; i++) {
-        final tc = paidAndSkipped[i];
-        final num = '${i + 1}.';
-        final name = tc.client.name;
+      for (int i = 0; i < registered.length; i++) {
+        final tc = registered[i];
         final value = tc.isPaid
             ? _formatAmount(tc.payment!.amount)
             : 'No dio';
-
-        buffer.writeln(_formatLine(num, name, value));
+        buffer.writeln(_formatLine('${i + 1}.', tc.client.name, value));
       }
     }
 
     buffer.writeln();
     buffer.writeln('TOTAL COBRADO: ${_formatAmount(totalCollected)}');
 
-    // Gastos
     if (expenses.isNotEmpty) {
       buffer.writeln();
       buffer.writeln('GASTOS:');
@@ -75,7 +68,6 @@ class ReportGenerator {
       buffer.writeln('TOTAL GASTOS: ${_formatAmount(totalExpenses)}');
     }
 
-    // Neto
     buffer.writeln();
     buffer.writeln('─' * 32);
     buffer.writeln('NETO: ${_formatAmount(netTotal)}');
@@ -83,7 +75,52 @@ class ReportGenerator {
     return buffer.toString();
   }
 
-  /// Formatea una línea con puntos de relleno
+  /// Genera el informe desde un [DaySummary] del historial.
+  static String generateFromSummary({
+    required String routeName,
+    required DaySummary summary,
+  }) {
+    final buffer = StringBuffer();
+    final date = DateTime.parse(summary.date);
+    final dateStr = DateFormat("EEEE d 'de' MMMM, yyyy", 'es').format(date);
+
+    buffer.writeln('PRESTO — Informe del día');
+    buffer.writeln(_capitalize(dateStr));
+    buffer.writeln('Ruta: $routeName');
+    buffer.writeln();
+    buffer.writeln('BASE: ${_formatAmount(summary.baseAmount)}');
+    buffer.writeln();
+    buffer.writeln('COBROS:');
+
+    if (summary.payments.isEmpty) {
+      buffer.writeln('  (Sin registros)');
+    } else {
+      for (int i = 0; i < summary.payments.length; i++) {
+        final pwc = summary.payments[i];
+        final isPaid = pwc.payment.status == PaymentStatus.paid;
+        final value = isPaid
+            ? _formatAmount(pwc.payment.amount)
+            : 'No dio';
+        buffer.writeln(_formatLine('${i + 1}.', pwc.clientName, value));
+      }
+    }
+
+    buffer.writeln();
+    buffer.writeln('TOTAL COBRADO: ${_formatAmount(summary.totalCollected)}');
+
+    if (summary.totalExpenses > 0) {
+      buffer.writeln();
+      buffer.writeln('TOTAL GASTOS: ${_formatAmount(summary.totalExpenses)}');
+    }
+
+    buffer.writeln();
+    buffer.writeln('─' * 32);
+    buffer.writeln('NETO: ${_formatAmount(summary.netTotal)}');
+
+    return buffer.toString();
+  }
+
+  /// Formatea una línea con puntos de relleno para alinear el valor a la derecha.
   static String _formatLine(String prefix, String name, String value) {
     const lineWidth = 40;
     final left = '$prefix $name';
@@ -104,50 +141,4 @@ class ReportGenerator {
     if (text.isEmpty) return text;
     return text[0].toUpperCase() + text.substring(1);
   }
-
-  /// Genera el texto del informe desde un DaySummary
-static String generateFromSummary({
-  required String routeName,
-  required DaySummary summary,
-}) {
-  final buffer = StringBuffer();
-  final date = DateTime.parse(summary.date);
-  final dateStr = DateFormat("EEEE d 'de' MMMM, yyyy", 'es').format(date);
-
-  buffer.writeln('PRESTO — Informe del día');
-  buffer.writeln(_capitalize(dateStr));
-  buffer.writeln('Ruta: $routeName');
-  buffer.writeln();
-  buffer.writeln('BASE: ${_formatAmount(summary.baseAmount)}');
-  buffer.writeln();
-  buffer.writeln('COBROS:');
-
-  if (summary.payments.isEmpty) {
-    buffer.writeln('  (Sin registros)');
-  } else {
-    for (int i = 0; i < summary.payments.length; i++) {
-      final pwc = summary.payments[i];
-      final isPaid = pwc.payment.status == PaymentStatus.paid;
-      final num = '${i + 1}.';
-      final value = isPaid
-          ? _formatAmount(pwc.payment.amount)
-          : 'No dio';
-      buffer.writeln(_formatLine(num, pwc.clientName, value));
-    }
-  }
-
-  buffer.writeln();
-  buffer.writeln('TOTAL COBRADO: ${_formatAmount(summary.totalCollected)}');
-
-  if (summary.totalExpenses > 0) {
-    buffer.writeln();
-    buffer.writeln('TOTAL GASTOS: ${_formatAmount(summary.totalExpenses)}');
-  }
-
-  buffer.writeln();
-  buffer.writeln('─' * 32);
-  buffer.writeln('NETO: ${_formatAmount(summary.netTotal)}');
-
-  return buffer.toString();
-}
 }

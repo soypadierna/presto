@@ -1,7 +1,15 @@
 import 'dart:convert';
 
+/// Tipos de cobro disponibles para un cliente.
 enum PaymentType { daily, weekly, biweekly, monthly }
 
+/// Representa un cliente dentro de una ruta de cobros.
+///
+/// El campo [paymentDays] es un JSON que varía según [paymentType]:
+/// - `daily`:    `{"days": ["mon","tue","wed","thu","fri","sat"]}`
+/// - `weekly`:   `{"day": "mon"}`
+/// - `biweekly`: `{"dates": [1, 15]}`
+/// - `monthly`:  `{"date": 1}`
 class ClientModel {
   final String id;
   final String routeId;
@@ -9,7 +17,11 @@ class ClientModel {
   final double credit;
   final PaymentType paymentType;
   final Map<String, dynamic> paymentDays;
+
+  /// Posición en la lista del día (drag & drop).
   final int position;
+
+  /// Si es false el cliente está eliminado (soft delete).
   final bool isActive;
   final String createdAt;
 
@@ -79,28 +91,28 @@ class ClientModel {
     );
   }
 
-  /// Determina si este cliente debe cobrar en la fecha dada
+  /// Determina si este cliente debe aparecer en la lista del día
+  /// según su tipo de cobro y la fecha proporcionada.
+  ///
+  /// Nunca retorna true para domingo a menos que sea un cliente
+  /// diario con domingo explícitamente configurado.
   bool isScheduledForDate(DateTime date) {
-    // Domingo = 7, no se cobra nunca
-    if (date.weekday == DateTime.sunday) return false;
-
     switch (paymentType) {
       case PaymentType.daily:
-        // Si tiene días específicos configurados, respetar esa selección
+        // Respetar los días específicos configurados
         final days = List<String>.from(
           paymentDays['days'] as List? ??
-              ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
+          ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
         );
-        final todayStr = _weekdayToString(date.weekday);
-        return days.contains(todayStr);
+        return days.contains(_weekdayToString(date.weekday));
 
       case PaymentType.weekly:
-        // Solo el día configurado: "mon", "tue", etc.
+        // Solo el día de la semana configurado
         final configuredDay = paymentDays['day'] as String;
         return _weekdayFromString(configuredDay) == date.weekday;
 
       case PaymentType.biweekly:
-        // Las dos fechas del mes configuradas
+        // Los dos días del mes configurados
         final dates = List<int>.from(paymentDays['dates'] as List);
         return dates.contains(date.day);
 
@@ -111,6 +123,7 @@ class ClientModel {
     }
   }
 
+  /// Convierte un string de día (`"mon"`) al entero de Flutter (`DateTime.monday`).
   int _weekdayFromString(String day) {
     const map = {
       'mon': DateTime.monday,
@@ -119,10 +132,12 @@ class ClientModel {
       'thu': DateTime.thursday,
       'fri': DateTime.friday,
       'sat': DateTime.saturday,
+      'sun': DateTime.sunday,
     };
     return map[day] ?? DateTime.monday;
   }
 
+  /// Convierte un entero de día de Flutter al string corto (`"mon"`).
   String _weekdayToString(int weekday) {
     const map = {
       DateTime.monday: 'mon',

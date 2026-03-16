@@ -8,17 +8,17 @@ import 'core/theme/theme_provider.dart';
 import 'features/routes/presentation/route_provider.dart';
 import 'features/routes/presentation/route_select_screen.dart';
 
-void main() async {
-final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  void main() async {
+  final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+    FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
 
-  runApp(const PrestoApp());
-}
+    runApp(const PrestoApp());
+  }
 
 class PrestoApp extends StatefulWidget {
   const PrestoApp({super.key});
