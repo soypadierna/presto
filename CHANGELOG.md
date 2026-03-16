@@ -5,6 +5,15 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [1.4.0] - 2026-03-15
+
+### Agregado
+- Unit tests para `ClientModel.isScheduledForDate` — todos los tipos de cobro
+- Unit tests para `ReportGenerator.generate` — cálculo de neto y formato
+- Unit tests para `Formatters` — montos, fechas y labels
+
+---
+
 ## [1.3.0] - 2026-03-15
 
 ### Agregado
