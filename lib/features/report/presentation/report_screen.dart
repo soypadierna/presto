@@ -22,8 +22,12 @@ class ReportScreen extends StatefulWidget {
   State<ReportScreen> createState() => _ReportScreenState();
 }
 
-class _ReportScreenState extends State<ReportScreen> with ErrorListenerMixin {
+class _ReportScreenState extends State<ReportScreen>
+    with ErrorListenerMixin, AutomaticKeepAliveClientMixin {
   late TextEditingController _baseController;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -51,6 +55,7 @@ class _ReportScreenState extends State<ReportScreen> with ErrorListenerMixin {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 

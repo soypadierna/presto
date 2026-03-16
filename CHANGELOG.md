@@ -5,6 +5,21 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [1.5.0] - 2026-03-15
+
+### Mejorado
+- Listas optimizadas con `RepaintBoundary` y `cacheExtent: 500`
+- Tabs mantienen estado con `AutomaticKeepAliveClientMixin`
+- `ValueKey` en lugar de `Key` para identificación más precisa de items
+- `TodayScreen`, `ClientListScreen` y `ReportScreen` mantienen
+  su estado al cambiar de tab sin recargar
+
+### Corregido
+- Eliminados operadores `==` y `hashCode` inválidos en widgets
+  (no permitidos en subclases de `Widget`)
+
+---
+
 ## [1.4.0] - 2026-03-15
 
 ### Agregado

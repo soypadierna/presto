@@ -17,9 +17,12 @@ class ClientListScreen extends StatefulWidget {
 }
 
 class _ClientListScreenState extends State<ClientListScreen>
-    with ErrorListenerMixin {
+    with ErrorListenerMixin, AutomaticKeepAliveClientMixin {
   final _searchController = TextEditingController();
   String _searchQuery = '';
+
+    @override   
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -51,6 +54,7 @@ class _ClientListScreenState extends State<ClientListScreen>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -141,22 +145,29 @@ class _ClientListScreenState extends State<ClientListScreen>
                 if (_searchQuery.isNotEmpty) {
                   return ListView.builder(
                     padding: const EdgeInsets.only(bottom: 80),
+                    cacheExtent: 500,
                     itemCount: filtered.length,
-                    itemBuilder: (context, index) => ClientListTile(
-                      client: filtered[index],
-                      routeId: widget.route.id,
+                    itemBuilder: (context, index) => RepaintBoundary(
+                      child: ClientListTile(
+                        key: ValueKey(filtered[index].id),
+                        client: filtered[index],
+                        routeId: widget.route.id,
+                      ),
                     ),
                   );
                 }
 
                 return ReorderableListView.builder(
                   padding: const EdgeInsets.only(bottom: 80),
+                  cacheExtent: 500,
                   itemCount: provider.clients.length,
                   onReorder: provider.reorderClients,
-                  itemBuilder: (context, index) => ClientListTile(
-                    key: Key('tile_${provider.clients[index].id}'),
-                    client: provider.clients[index],
-                    routeId: widget.route.id,
+                  itemBuilder: (context, index) => RepaintBoundary(
+                    key: ValueKey(provider.clients[index].id),
+                    child: ClientListTile(
+                      client: provider.clients[index],
+                      routeId: widget.route.id,
+                    ),
                   ),
                 );
               },

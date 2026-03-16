@@ -16,9 +16,14 @@ class TodayScreen extends StatefulWidget {
   State<TodayScreen> createState() => _TodayScreenState();
 }
 
-class _TodayScreenState extends State<TodayScreen> with ErrorListenerMixin {
+class _TodayScreenState extends State<TodayScreen>
+    with ErrorListenerMixin, AutomaticKeepAliveClientMixin {
+
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -47,6 +52,7 @@ class _TodayScreenState extends State<TodayScreen> with ErrorListenerMixin {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -125,10 +131,14 @@ class _TodayScreenState extends State<TodayScreen> with ErrorListenerMixin {
                           )
                         : ListView.builder(
                             padding: const EdgeInsets.only(bottom: 24),
+                            // Pre-renderiza 500px extra fuera de pantalla
+                            cacheExtent: 500,
                             itemCount: filtered.length,
-                            itemBuilder: (context, index) => TodayClientTile(
-                              key: Key(filtered[index].client.id),
-                              todayClient: filtered[index],
+                            itemBuilder: (context, index) => RepaintBoundary(
+                              child: TodayClientTile(
+                                key: ValueKey(filtered[index].client.id),
+                                todayClient: filtered[index],
+                              ),
                             ),
                           ),
               ),
