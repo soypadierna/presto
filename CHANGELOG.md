@@ -5,6 +5,26 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [1.4.0] - 2026-03-15
+
+### Agregado
+- Unit tests para `ClientModel.isScheduledForDate` — todos los tipos de cobro
+- Unit tests para `ReportGenerator.generate` — cálculo de neto y formato
+- Unit tests para `Formatters` — montos, fechas y labels
+
+---
+
+## [1.3.0] - 2026-03-15
+
+### Agregado
+- Validación completa del archivo de respaldo antes de importar
+- Verificación de magic bytes SQLite para detectar archivos corruptos
+- Verificación de tablas y columnas requeridas por Presto
+- Pantalla de confirmación muestra el contenido del respaldo antes de restaurar
+- `BackupValidator` con resultado detallado y `BackupInfo`
+
+---
+
 ## [1.2.0] - 2026-03-15
 
 ### Corregido

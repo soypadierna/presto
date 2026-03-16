@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../database/database_helper.dart';
+import 'backup_validator.dart';
 
 /// Servicio para exportar e importar la base de datos de Presto.
 ///
@@ -52,24 +53,21 @@ class BackupService {
   /// 3. Copia el archivo importado
   /// 4. Reinicializa la conexión
   /// 5. Si algo falla, restaura el backup de seguridad
+  /// Valida e importa un archivo `.presto` sobre la base de datos actual.
   static Future<void> importBackup(String filePath) async {
     try {
+      // 1. Validar el archivo antes de hacer cualquier cambio
+      final validation = await BackupValidator.validate(filePath);
+      if (!validation.isValid) {
+        throw Exception(validation.errorMessage);
+      }
+
       final backupFile = File(filePath);
-
-      if (!await backupFile.exists()) {
-        throw Exception('El archivo seleccionado no existe');
-      }
-
-      final fileSize = await backupFile.length();
-      if (fileSize == 0) {
-        throw Exception('El archivo de respaldo está vacío');
-      }
-
       await DatabaseHelper.instance.closeDatabase();
       final dbPath = await DatabaseHelper.instance.getDatabasePath();
       final currentDb = File(dbPath);
 
-      // Backup de seguridad por si falla la importación
+      // 2. Backup de seguridad de la DB actual
       if (await currentDb.exists()) {
         await currentDb.copy('$dbPath.bak');
       }
@@ -93,8 +91,15 @@ class BackupService {
         throw Exception('Error al importar: $e');
       }
     } catch (e) {
-      throw Exception('Error al importar respaldo: $e');
+      throw Exception(e.toString().replaceAll('Exception: ', ''));
     }
+  }
+
+  /// Valida un archivo sin importarlo — para mostrar info previa al usuario.
+  static Future<BackupValidationResult> validateOnly(
+    String filePath,
+  ) async {
+    return BackupValidator.validate(filePath);
   }
 
   /// Comparte el archivo de respaldo usando el sistema del dispositivo.

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../core/backup/backup_service.dart';
+import '../../../core/backup/backup_validator.dart';
+import '../../../core/utils/formatters.dart';
 
 enum _BackupState { idle, loading, success, error }
 
@@ -32,7 +34,7 @@ class _BackupScreenState extends State<BackupScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Descripción general
+          // Info general
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -64,13 +66,11 @@ class _BackupScreenState extends State<BackupScreen> {
           ),
           const SizedBox(height: 20),
 
-          // Sección exportar
           _buildSectionTitle(context, 'Exportar datos'),
           const SizedBox(height: 10),
           _buildExportCard(context),
           const SizedBox(height: 20),
 
-          // Sección importar
           _buildSectionTitle(context, 'Importar datos'),
           const SizedBox(height: 10),
           _buildImportCard(context),
@@ -90,7 +90,6 @@ class _BackupScreenState extends State<BackupScreen> {
     );
   }
 
-  // ── Tarjeta de exportar ────────────────────────────────────
   Widget _buildExportCard(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -144,8 +143,6 @@ class _BackupScreenState extends State<BackupScreen> {
               ),
             ],
           ),
-
-          // Estado del export
           if (_exportState == _BackupState.success) ...[
             const SizedBox(height: 14),
             _buildStatusMessage(
@@ -162,10 +159,7 @@ class _BackupScreenState extends State<BackupScreen> {
               isError: true,
             ),
           ],
-
           const SizedBox(height: 16),
-
-          // Botones
           Row(
             children: [
               Expanded(
@@ -214,7 +208,6 @@ class _BackupScreenState extends State<BackupScreen> {
     );
   }
 
-  // ── Tarjeta de importar ────────────────────────────────────
   Widget _buildImportCard(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -268,9 +261,8 @@ class _BackupScreenState extends State<BackupScreen> {
               ),
             ],
           ),
-
-          // Advertencia
           const SizedBox(height: 14),
+          // Advertencia
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -300,8 +292,6 @@ class _BackupScreenState extends State<BackupScreen> {
               ],
             ),
           ),
-
-          // Estado del import
           if (_importState == _BackupState.success) ...[
             const SizedBox(height: 14),
             _buildStatusMessage(
@@ -318,10 +308,7 @@ class _BackupScreenState extends State<BackupScreen> {
               isError: true,
             ),
           ],
-
           const SizedBox(height: 16),
-
-          // Botón importar
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
@@ -340,7 +327,7 @@ class _BackupScreenState extends State<BackupScreen> {
                   : const Icon(Icons.folder_open_outlined, size: 18),
               label: Text(
                 _importState == _BackupState.loading
-                    ? 'Importando...'
+                    ? 'Validando...'
                     : 'Seleccionar archivo .presto',
               ),
               style: FilledButton.styleFrom(
@@ -361,11 +348,13 @@ class _BackupScreenState extends State<BackupScreen> {
     required String message,
     required bool isError,
   }) {
-    final color = isError ? Colors.red.shade600 : Colors.green.shade600;
+    final color =
+        isError ? Colors.red.shade600 : Colors.green.shade600;
     final bgColor = isError
         ? Colors.red.withValues(alpha: 0.08)
         : Colors.green.withValues(alpha: 0.08);
-    final icon = isError ? Icons.error_outline : Icons.check_circle_outline;
+    final icon =
+        isError ? Icons.error_outline : Icons.check_circle_outline;
 
     return Container(
       padding: const EdgeInsets.all(10),
@@ -392,8 +381,6 @@ class _BackupScreenState extends State<BackupScreen> {
       ),
     );
   }
-
-  // ── Acciones ───────────────────────────────────────────────
 
   Future<void> _createBackup() async {
     setState(() {
@@ -427,7 +414,8 @@ class _BackupScreenState extends State<BackupScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Error al compartir: ${e.toString().replaceAll('Exception: ', '')}',
+              'Error al compartir: '
+              '${e.toString().replaceAll('Exception: ', '')}',
             ),
             backgroundColor: Colors.red.shade600,
           ),
@@ -438,7 +426,6 @@ class _BackupScreenState extends State<BackupScreen> {
 
   Future<void> _selectAndImportBackup() async {
     try {
-      // Seleccionar archivo
       final result = await FilePicker.platform.pickFiles(
         type: FileType.any,
         allowMultiple: false,
@@ -459,23 +446,36 @@ class _BackupScreenState extends State<BackupScreen> {
         return;
       }
 
-      // Confirmar importación
-      final confirmed = await _showImportConfirmation();
-      if (!mounted || confirmed != true) return;
+      // Validar el archivo ANTES de mostrar la confirmación
+      setState(() => _importState = _BackupState.loading);
 
-      setState(() {
-        _importState = _BackupState.loading;
-        _importError = null;
-        _importMessage = null;
-      });
+      final validation = await BackupService.validateOnly(filePath);
 
+      if (!validation.isValid) {
+        setState(() {
+          _importState = _BackupState.error;
+          _importError = validation.errorMessage;
+        });
+        return;
+      }
+
+      // Mostrar confirmación con información del respaldo
+      if (!mounted) return;
+      final confirmed = await _showImportConfirmation(validation.info!);
+      if (!mounted || confirmed != true) {
+        setState(() => _importState = _BackupState.idle);
+        return;
+      }
+
+      setState(() => _importState = _BackupState.loading);
       await BackupService.importBackup(filePath);
 
       if (mounted) {
         setState(() {
           _importState = _BackupState.success;
           _importMessage =
-              'Datos restaurados correctamente. Reinicia la app para ver los cambios.';
+              'Datos restaurados correctamente. '
+              'Reinicia la app para ver los cambios.';
         });
       }
     } catch (e) {
@@ -488,15 +488,85 @@ class _BackupScreenState extends State<BackupScreen> {
     }
   }
 
-  Future<bool?> _showImportConfirmation() {
+  Future<bool?> _showImportConfirmation(BackupInfo info) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('¿Restaurar respaldo?'),
-        content: const Text(
-          'Esta acción reemplazará TODOS los datos actuales '
-          '(rutas, clientes, pagos y gastos) con los del archivo seleccionado.\n\n'
-          'Esta acción no se puede deshacer. ¿Deseas continuar?',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Esta acción reemplazará TODOS los datos actuales. '
+              'No se puede deshacer.',
+            ),
+            const SizedBox(height: 16),
+            // Info del respaldo
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Contenido del respaldo:',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildInfoRow(
+                    context: ctx,
+                    icon: Icons.route_outlined,
+                    label: 'Rutas',
+                    value: '${info.routeCount}',
+                  ),
+                  _buildInfoRow(
+                    context: ctx,
+                    icon: Icons.people_outline,
+                    label: 'Clientes activos',
+                    value: '${info.clientCount}',
+                  ),
+                  _buildInfoRow(
+                    context: ctx,
+                    icon: Icons.payments_outlined,
+                    label: 'Pagos registrados',
+                    value: '${info.paymentCount}',
+                  ),
+                  _buildInfoRow(
+                    context: ctx,
+                    icon: Icons.receipt_outlined,
+                    label: 'Gastos',
+                    value: '${info.expenseCount}',
+                  ),
+                  if (info.oldestDate != null &&
+                      info.newestDate != null) ...[
+                    _buildInfoRow(
+                      context: ctx,
+                      icon: Icons.calendar_today_outlined,
+                      label: 'Período',
+                      value:
+                          '${Formatters.formatShortDate(DateTime.parse(info.oldestDate!))} '
+                          '— ${Formatters.formatShortDate(DateTime.parse(info.newestDate!))}',
+                    ),
+                  ],
+                  _buildInfoRow(
+                    context: ctx,
+                    icon: Icons.storage_outlined,
+                    label: 'Tamaño',
+                    value: '${info.fileSizeKb} KB',
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -509,6 +579,42 @@ class _BackupScreenState extends State<BackupScreen> {
               backgroundColor: Colors.orange.shade700,
             ),
             child: const Text('Restaurar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
