@@ -5,6 +5,22 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [1.2.0] - 2026-03-15
+
+### Agregado
+- Manejo global de errores con `ErrorHandler` y `AppErrorWidget`
+- Pantalla de error amigable reemplaza la pantalla roja de Flutter
+- `AsyncErrorBoundary` widget reutilizable para secciones con operaciones async
+- `ErrorListenerMixin` reutilizable para escuchar errores en todas las pantallas
+- `errorMessage` en todos los providers: `RouteProvider`, `ClientProvider`,
+  `TodayProvider`, `ReportProvider`, `StatsProvider`
+- SnackBar de error automático en todas las pantallas al fallar una operación
+
+### Mejorado
+- `RouteSelectScreen` convertido a `StatefulWidget` para soportar el mixin de errores
+
+---
+
 ## [1.1.0] - 2026-03-15
 
 ### Corregido
