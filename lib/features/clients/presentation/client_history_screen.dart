@@ -78,9 +78,11 @@ class _ClientHistoryScreenState extends State<ClientHistoryScreen> {
                       ? _buildEmptyState(context)
                       : ListView.builder(
                           padding: const EdgeInsets.only(bottom: 24),
+                          cacheExtent: 500,
                           itemCount: _payments.length,
-                          itemBuilder: (context, index) =>
-                              _buildPaymentTile(context, _payments[index]),
+                          itemBuilder: (context, index) => RepaintBoundary(
+                            child: _buildPaymentTile(context, _payments[index]),
+                          ),
                         ),
                 ),
               ],

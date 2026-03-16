@@ -354,11 +354,11 @@ class _StatsScreenState extends State<StatsScreen>
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
+      cacheExtent: 500,
       itemCount: provider.recentDays.length,
-      itemBuilder: (context, index) {
-        final day = provider.recentDays[index];
-        return _buildDayHistoryTile(context, day);
-      },
+      itemBuilder: (context, index) => RepaintBoundary(
+        child: _buildDayHistoryTile(context, provider.recentDays[index]),
+      ),
     );
   }
 
