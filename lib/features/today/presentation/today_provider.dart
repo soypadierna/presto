@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 import '../data/payment_repository.dart';
 import '../domain/today_client.dart';
 import '../domain/payment_model.dart';
 import '../../clients/data/client_repository.dart';
-import 'package:uuid/uuid.dart';
 
 class TodayProvider extends ChangeNotifier {
   final ClientRepository _clientRepository = ClientRepository();
@@ -13,13 +13,14 @@ class TodayProvider extends ChangeNotifier {
   bool _isLoading = false;
   String _currentRouteId = '';
   DateTime _selectedDate = DateTime.now();
+  String? _errorMessage;
 
   List<TodayClient> get todayClients => _todayClients;
   bool get isLoading => _isLoading;
   String get currentRouteId => _currentRouteId;
   DateTime get selectedDate => _selectedDate;
+  String? get errorMessage => _errorMessage;
 
-  // Getters de resumen
   double get totalCollected => _todayClients
       .where((tc) => tc.isPaid)
       .fold(0, (sum, tc) => sum + (tc.payment?.amount ?? 0));
@@ -28,10 +29,16 @@ class TodayProvider extends ChangeNotifier {
   int get skippedCount => _todayClients.where((tc) => tc.isSkipped).length;
   int get pendingCount => _todayClients.where((tc) => tc.isPending).length;
 
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
+  }
+
   Future<void> loadTodayClients(String routeId, {DateTime? date}) async {
     _currentRouteId = routeId;
     _selectedDate = date ?? DateTime.now();
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
@@ -46,16 +53,15 @@ class TodayProvider extends ChangeNotifier {
         dateStr,
       );
 
-      // Corrección: usar where + firstOrNull en lugar de firstWhere con orElse
       _todayClients = clients.map((client) {
-        final matchingPayments = payments.where((p) => p.clientId == client.id);
-        final payment = matchingPayments.isNotEmpty
-            ? matchingPayments.first
-            : null;
-
+        final matchingPayments =
+            payments.where((p) => p.clientId == client.id);
+        final payment =
+            matchingPayments.isNotEmpty ? matchingPayments.first : null;
         return TodayClient(client: client, payment: payment);
       }).toList();
     } catch (e) {
+      _errorMessage = 'No se pudo cargar la lista del día';
       debugPrint('Error cargando lista del día: $e');
     } finally {
       _isLoading = false;
@@ -94,6 +100,8 @@ class TodayProvider extends ChangeNotifier {
 
       await loadTodayClients(_currentRouteId, date: _selectedDate);
     } catch (e) {
+      _errorMessage = 'No se pudo registrar el pago';
+      notifyListeners();
       debugPrint('Error registrando pago: $e');
     }
   }
@@ -128,6 +136,8 @@ class TodayProvider extends ChangeNotifier {
 
       await loadTodayClients(_currentRouteId, date: _selectedDate);
     } catch (e) {
+      _errorMessage = 'No se pudo registrar el estado';
+      notifyListeners();
       debugPrint('Error registrando no dio: $e');
     }
   }
@@ -138,11 +148,15 @@ class TodayProvider extends ChangeNotifier {
       await _paymentRepository.deletePayment(todayClient.payment!.id);
       await loadTodayClients(_currentRouteId, date: _selectedDate);
     } catch (e) {
+      _errorMessage = 'No se pudo deshacer el registro';
+      notifyListeners();
       debugPrint('Error deshaciendo pago: $e');
     }
   }
 
   String _formatDate(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    return '${date.year}-'
+        '${date.month.toString().padLeft(2, '0')}-'
+        '${date.day.toString().padLeft(2, '0')}';
   }
 }
