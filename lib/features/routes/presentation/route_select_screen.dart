@@ -1,12 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/error/error_listener.dart';
 import '../domain/route_model.dart';
 import 'route_provider.dart';
 import 'widgets/route_card.dart';
 import '../../home/presentation/home_screen.dart';
 
-class RouteSelectScreen extends StatelessWidget {
+class RouteSelectScreen extends StatefulWidget {
   const RouteSelectScreen({super.key});
+
+  @override
+  State<RouteSelectScreen> createState() => _RouteSelectScreenState();
+}
+
+class _RouteSelectScreenState extends State<RouteSelectScreen>
+    with ErrorListenerMixin {
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<RouteProvider>();
+
+      // Escuchar errores
+      listenForErrors<RouteProvider>(
+        errorSelector: (p) => p.errorMessage,
+        clearError: provider.clearError,
+      );
+    });
+  }
 
   @override
 Widget build(BuildContext context) {

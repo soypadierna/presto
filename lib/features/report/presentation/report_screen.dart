@@ -4,6 +4,7 @@ import 'package:presto/features/report/presentation/stats_provider.dart';
 import 'package:presto/features/report/presentation/stats_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../../core/error/error_listener.dart';
 import '../../routes/domain/route_model.dart';
 import 'report_provider.dart';
 import '../../today/presentation/today_provider.dart';
@@ -21,21 +22,27 @@ class ReportScreen extends StatefulWidget {
   State<ReportScreen> createState() => _ReportScreenState();
 }
 
-class _ReportScreenState extends State<ReportScreen> {
+class _ReportScreenState extends State<ReportScreen>
+    with ErrorListenerMixin {
   late TextEditingController _baseController;
 
-  @override
-  void initState() {
-    super.initState();
-    _baseController = TextEditingController();
-    // Sincronizar controller cuando cargue el provider
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<ReportProvider>();
-      if (provider.baseAmount > 0) {
-        _baseController.text = provider.baseAmount.toStringAsFixed(0);
-      }
-    });
-  }
+@override
+void initState() {
+  super.initState();
+  _baseController = TextEditingController();
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final provider = context.read<ReportProvider>();
+    if (provider.baseAmount > 0) {
+      _baseController.text = provider.baseAmount.toStringAsFixed(0);
+    }
+
+    // Escuchar errores
+    listenForErrors<ReportProvider>(
+      errorSelector: (p) => p.errorMessage,
+      clearError: provider.clearError,
+    );
+  });
+}
 
   @override
   void dispose() {

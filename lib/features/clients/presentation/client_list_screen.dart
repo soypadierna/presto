@@ -5,6 +5,7 @@ import '../../routes/domain/route_model.dart';
 import 'client_provider.dart';
 import 'client_form_screen.dart';
 import 'widgets/client_list_tile.dart';
+import '../../../core/error/error_listener.dart';
 
 class ClientListScreen extends StatefulWidget {
   final RouteModel route;
@@ -15,7 +16,8 @@ class ClientListScreen extends StatefulWidget {
   State<ClientListScreen> createState() => _ClientListScreenState();
 }
 
-class _ClientListScreenState extends State<ClientListScreen> {
+class _ClientListScreenState extends State<ClientListScreen>
+    with ErrorListenerMixin {
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -23,7 +25,14 @@ class _ClientListScreenState extends State<ClientListScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ClientProvider>().loadClients(widget.route.id);
+      final provider = context.read<ClientProvider>();
+      provider.loadClients(widget.route.id);
+
+      // Escuchar errores
+      listenForErrors<ClientProvider>(
+        errorSelector: (p) => p.errorMessage,
+        clearError: provider.clearError,
+      );
     });
   }
 
@@ -36,8 +45,9 @@ class _ClientListScreenState extends State<ClientListScreen> {
   List<ClientModel> _filterClients(List<ClientModel> clients) {
     if (_searchQuery.isEmpty) return clients;
     return clients
-        .where((c) =>
-            c.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .where((c) => c.name
+            .toLowerCase()
+            .contains(_searchQuery.toLowerCase()))
         .toList();
   }
 
@@ -64,12 +74,12 @@ class _ClientListScreenState extends State<ClientListScreen> {
       ),
       body: Column(
         children: [
-          // Barra de búsqueda
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: TextField(
               controller: _searchController,
-              onChanged: (value) => setState(() => _searchQuery = value),
+              onChanged: (value) =>
+                  setState(() => _searchQuery = value),
               decoration: InputDecoration(
                 hintText: 'Buscar cliente...',
                 prefixIcon: const Icon(Icons.search, size: 20),
@@ -88,20 +98,17 @@ class _ClientListScreenState extends State<ClientListScreen> {
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: theme.colorScheme.outline.withOpacity(0.3),
-                  ),
                 ),
               ),
             ),
           ),
-
-          // Lista de clientes
           Expanded(
             child: Consumer<ClientProvider>(
               builder: (context, provider, _) {
                 if (provider.isLoading) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
                 }
 
                 final filtered = _filterClients(provider.clients);
@@ -118,13 +125,15 @@ class _ClientListScreenState extends State<ClientListScreen> {
                         Icon(
                           Icons.search_off_rounded,
                           size: 48,
-                          color: theme.colorScheme.onSurface.withOpacity(0.3),
+                          color: theme.colorScheme.onSurface
+                              .withOpacity(0.3),
                         ),
                         const SizedBox(height: 12),
                         Text(
                           'Sin resultados para "$_searchQuery"',
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurface.withOpacity(0.5),
+                            color: theme.colorScheme.onSurface
+                                .withOpacity(0.5),
                           ),
                         ),
                       ],
@@ -132,7 +141,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
                   );
                 }
 
-                // Si hay búsqueda activa, mostrar lista normal sin reordenar
                 if (_searchQuery.isNotEmpty) {
                   return ListView.builder(
                     padding: const EdgeInsets.only(bottom: 80),
@@ -144,7 +152,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
                   );
                 }
 
-                // Sin búsqueda: lista reordenable
                 return ReorderableListView.builder(
                   padding: const EdgeInsets.only(bottom: 80),
                   itemCount: provider.clients.length,

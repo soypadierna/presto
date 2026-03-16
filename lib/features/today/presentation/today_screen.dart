@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-
 import '../../routes/domain/route_model.dart';
 import 'today_provider.dart';
 import 'widgets/today_client_tile.dart';
 import 'widgets/today_summary_card.dart';
+import '../../../core/error/error_listener.dart';
 
 class TodayScreen extends StatefulWidget {
   final RouteModel route;
@@ -16,7 +16,8 @@ class TodayScreen extends StatefulWidget {
   State<TodayScreen> createState() => _TodayScreenState();
 }
 
-class _TodayScreenState extends State<TodayScreen> {
+class _TodayScreenState extends State<TodayScreen>
+    with ErrorListenerMixin {
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -24,7 +25,14 @@ class _TodayScreenState extends State<TodayScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<TodayProvider>().loadTodayClients(widget.route.id);
+      final provider = context.read<TodayProvider>();
+      provider.loadTodayClients(widget.route.id);
+
+      // Escuchar errores
+      listenForErrors<TodayProvider>(
+        errorSelector: (p) => p.errorMessage,
+        clearError: provider.clearError,
+      );
     });
   }
 
@@ -75,10 +83,7 @@ class _TodayScreenState extends State<TodayScreen> {
 
           return Column(
             children: [
-              // Resumen del día
               const TodaySummaryCard(),
-
-              // Barra de búsqueda
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                 child: TextField(
@@ -106,8 +111,6 @@ class _TodayScreenState extends State<TodayScreen> {
                   ),
                 ),
               ),
-
-              // Lista del día
               Expanded(
                 child: provider.todayClients.isEmpty
                     ? _buildEmptyState(context)
@@ -124,7 +127,8 @@ class _TodayScreenState extends State<TodayScreen> {
                         : ListView.builder(
                             padding: const EdgeInsets.only(bottom: 24),
                             itemCount: filtered.length,
-                            itemBuilder: (context, index) => TodayClientTile(
+                            itemBuilder: (context, index) =>
+                                TodayClientTile(
                               key: Key(filtered[index].client.id),
                               todayClient: filtered[index],
                             ),

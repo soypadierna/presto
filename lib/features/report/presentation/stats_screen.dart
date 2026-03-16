@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/error/error_listener.dart';
 import '../../routes/domain/route_model.dart';
 import '../../../core/utils/formatters.dart';
 import '../domain/day_summary.dart';
@@ -17,17 +18,24 @@ class StatsScreen extends StatefulWidget {
 }
 
 class _StatsScreenState extends State<StatsScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, ErrorListenerMixin {
   late TabController _tabController;
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<StatsProvider>().loadStats(widget.route.id);
-    });
-  }
+@override
+void initState() {
+  super.initState();
+  _tabController = TabController(length: 2, vsync: this);
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final provider = context.read<StatsProvider>();
+    provider.loadStats(widget.route.id);
+
+    // Escuchar errores
+    listenForErrors<StatsProvider>(
+      errorSelector: (p) => p.errorMessage,
+      clearError: provider.clearError,
+    );
+  });
+}
 
   @override
   void dispose() {
