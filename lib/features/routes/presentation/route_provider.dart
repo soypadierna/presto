@@ -60,13 +60,35 @@ class RouteProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> deleteRoute(String id) async {
+  /// Intenta eliminar la ruta sin forzar.
+  /// Si tiene clientes retorna las estadísticas para que
+  /// la UI muestre el dialog de confirmación.
+  Future<bool> deleteRoute(String id) async {
     try {
-      await _repository.deleteRoute(id);
+      await _repository.deleteRoute(id, force: false);
+      await loadRoutes();
+      return true;
+    } catch (e) {
+      // No es un error real — tiene clientes, necesita confirmación
+      debugPrint('Ruta tiene datos, requiere confirmación: $e');
+      return false;
+    }
+  }
+
+  /// Elimina la ruta y todos sus datos en cascada.
+  Future<void> forceDeleteRoute(String id) async {
+    try {
+      await _repository.deleteRoute(id, force: true);
       await loadRoutes();
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _errorMessage = 'No se pudo eliminar la ruta';
       notifyListeners();
+      debugPrint('Error eliminando ruta: $e');
     }
+  }
+
+  /// Obtiene estadísticas de la ruta antes de eliminarla.
+  Future<RouteDeleteStats> getRouteStats(String id) async {
+    return await _repository.getRouteStats(id);
   }
 }
