@@ -5,6 +5,16 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [1.7.0] - 2026-03-23
+
+### Agregado
+- Eliminar ruta con todos sus datos en cascada usando transacción SQLite
+- Dialog de confirmación muestra conteo de clientes, pagos y gastos antes de eliminar
+- `RouteDeleteStats` para obtener estadísticas antes de eliminar
+- `forceDeleteRoute` en `RouteProvider` para eliminación en cascada
+
+---
+
 ## [1.6.0] - 2026-03-15
 
 ### Agregado
