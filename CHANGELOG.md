@@ -5,6 +5,19 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [1.6.0] - 2026-03-15
+
+### Agregado
+- Configuración de firma de release para APK y AAB de Android
+- Reglas ProGuard para Flutter, Google Play Core, SQLite y Kotlin
+- Soporte para `minifyEnabled` y `shrinkResources` en builds de release
+
+### Corregido
+- Paquete migrado de `com.example.presto` a `com.presto.app`
+- Java actualizado a versión 17 para eliminar warnings obsoletos
+
+---
+
 ## [1.5.0] - 2026-03-15
 
 ### Mejorado
