@@ -5,6 +5,24 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [1.8.0] - 2026-03-23
+
+### Agregado
+- Tipos de pago: efectivo y transferencia
+- Adjuntar imagen de comprobante en pagos por transferencia
+- Opción de tomar foto o seleccionar de galería
+- Preview de imagen en el dialog de pago
+- Miniatura del comprobante en el historial del cliente
+- Visor de imagen en pantalla completa con zoom
+- `ImageHelper` para gestión de imágenes locales
+- Migración de DB a versión 2 con columnas `payment_method` e `image_path`
+- Al eliminar un pago se elimina su imagen asociada automáticamente
+
+### Corregido
+- Al cancelar el dialog de pago se limpia la imagen temporal
+
+---
+
 ## [1.7.0] - 2026-03-23
 
 ### Agregado
