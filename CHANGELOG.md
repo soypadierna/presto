@@ -5,6 +5,20 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [1.9.0] - 2026-03-23
+
+### Agregado
+- Filtros en la lista del día: Todos, Pendientes, Pagaron, No dieron
+- Contador de clientes por cada filtro
+- Mensaje específico por filtro cuando no hay resultados
+- Botón "Ver todos" para limpiar el filtro activo
+
+### Mejorado
+- El scroll se mantiene en la misma posición al registrar un pago
+- Animación suave al cambiar entre filtros
+
+---
+
 ## [1.8.0] - 2026-03-23
 
 ### Agregado
