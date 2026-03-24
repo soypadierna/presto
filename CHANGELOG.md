@@ -5,6 +5,24 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [2.0.0] - 2026-03-23
+
+### Agregado
+- Editar pagos históricos desde el historial del cliente
+- Agregar pagos faltantes en el historial del cliente con selector de fecha
+- Eliminar pagos históricos con swipe en el historial
+- Editar pagos desde el detalle del día en estadísticas
+- Agregar pagos a días anteriores desde el detalle del día
+- `PaymentEditDialog` widget reutilizable para crear y editar pagos
+- Selector de clientes sin pago al agregar desde el detalle del día
+- Validación para evitar pagos duplicados en el mismo día
+
+### Mejorado
+- `DayDetailScreen` ahora recibe `routeId` para recargar datos
+- El resumen del día se actualiza en tiempo real al editar pagos
+
+---
+
 ## [1.9.0] - 2026-03-23
 
 ### Agregado
