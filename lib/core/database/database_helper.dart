@@ -1,16 +1,13 @@
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
-/// Singleton que gestiona la conexión a la base de datos SQLite local.
-/// Todas las operaciones de base de datos pasan por esta clase.
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._internal();
   static Database? _database;
 
   DatabaseHelper._internal();
 
-  /// Retorna la instancia activa de la base de datos.
-  /// Si no existe, la inicializa automáticamente.
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDB();
@@ -20,10 +17,15 @@ class DatabaseHelper {
   Future<Database> _initDB() async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'presto.db');
-    return await openDatabase(path, version: 1, onCreate: _createDB);
+
+    return await openDatabase(
+      path,
+      version: 2,
+      onCreate: _createDB,
+      onUpgrade: _onUpgrade,
+    );
   }
 
-  /// Crea todas las tablas al inicializar la base de datos por primera vez.
   Future<void> _createDB(Database db, int version) async {
     await db.execute('''
       CREATE TABLE routes (
@@ -58,6 +60,8 @@ class DatabaseHelper {
         note TEXT,
         payment_date TEXT NOT NULL,
         created_at TEXT NOT NULL,
+        payment_method TEXT NOT NULL DEFAULT 'cash',
+        image_path TEXT,
         FOREIGN KEY (client_id) REFERENCES clients(id),
         FOREIGN KEY (route_id) REFERENCES routes(id)
       )
@@ -87,8 +91,22 @@ class DatabaseHelper {
     ''');
   }
 
-  /// Cierra la conexión activa a la base de datos.
-  /// Usado antes de operaciones de respaldo/restauración.
+  /// Migración de versión 1 a 2:
+  /// Agrega columnas payment_method e image_path a la tabla payments.
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('''
+        ALTER TABLE payments
+        ADD COLUMN payment_method TEXT NOT NULL DEFAULT 'cash'
+      ''');
+      await db.execute('''
+        ALTER TABLE payments
+        ADD COLUMN image_path TEXT
+      ''');
+      debugPrint('DB migrada de v$oldVersion a v$newVersion');
+    }
+  }
+
   Future<void> closeDatabase() async {
     if (_database != null) {
       await _database!.close();
@@ -96,14 +114,11 @@ class DatabaseHelper {
     }
   }
 
-  /// Retorna la ruta absoluta del archivo `.db` en el dispositivo.
   Future<String> getDatabasePath() async {
     final dbPath = await getDatabasesPath();
     return join(dbPath, 'presto.db');
   }
 
-  /// Cierra y reinicializa la conexión.
-  /// Llamado después de importar un respaldo para cargar la nueva DB.
   Future<void> reinitialize() async {
     await closeDatabase();
     _database = await _initDB();

@@ -24,6 +24,7 @@ dependencies:
   file_picker: ^10.3.10
   flutter_native_splash: ^2.4.7
   path_provider: ^2.1.5
+  image_picker: ^1.2.1
 
 dev_dependencies:
   flutter_test:

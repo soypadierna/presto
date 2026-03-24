@@ -54,8 +54,7 @@ class TodayProvider extends ChangeNotifier {
       );
 
       _todayClients = clients.map((client) {
-        final matchingPayments =
-            payments.where((p) => p.clientId == client.id);
+        final matchingPayments = payments.where((p) => p.clientId == client.id);
         final payment =
             matchingPayments.isNotEmpty ? matchingPayments.first : null;
         return TodayClient(client: client, payment: payment);
@@ -69,17 +68,25 @@ class TodayProvider extends ChangeNotifier {
     }
   }
 
+  /// Registra un pago con tipo de método e imagen opcional.
   Future<void> registerPayment(
     TodayClient todayClient,
     double amount,
-    String? note,
-  ) async {
+    String? note, {
+    PaymentMethod paymentMethod = PaymentMethod.cash,
+    String? imagePath,
+  }) async {
     try {
       final dateStr = _formatDate(_selectedDate);
       final existing = await _paymentRepository.getPaymentByClientAndDate(
         todayClient.client.id,
         dateStr,
       );
+
+      // Si había imagen anterior y se está reemplazando, eliminarla
+      if (existing?.imagePath != null && existing!.imagePath != imagePath) {
+        await _paymentRepository.deletePayment(existing.id);
+      }
 
       final payment = PaymentModel(
         id: existing?.id ?? const Uuid().v4(),
@@ -90,6 +97,8 @@ class TodayProvider extends ChangeNotifier {
         note: note,
         paymentDate: dateStr,
         createdAt: existing?.createdAt ?? DateTime.now().toIso8601String(),
+        paymentMethod: paymentMethod,
+        imagePath: imagePath,
       );
 
       if (existing != null) {
