@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/error/error_listener.dart';
 import '../domain/route_model.dart';
 import 'route_provider.dart';
 import 'widgets/route_card.dart';
 import '../../home/presentation/home_screen.dart';
+import '../../home/presentation/settings_screen.dart';
+import '../../../core/error/error_listener.dart';
+import '../data/route_repository.dart';
 
 class RouteSelectScreen extends StatefulWidget {
   const RouteSelectScreen({super.key});
@@ -15,13 +17,12 @@ class RouteSelectScreen extends StatefulWidget {
 
 class _RouteSelectScreenState extends State<RouteSelectScreen>
     with ErrorListenerMixin {
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<RouteProvider>();
-
-      // Escuchar errores
       listenForErrors<RouteProvider>(
         errorSelector: (p) => p.errorMessage,
         clearError: provider.clearError,
@@ -31,26 +32,8 @@ class _RouteSelectScreenState extends State<RouteSelectScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Escuchar errores del provider
     return Consumer<RouteProvider>(
       builder: (context, provider, _) {
-        // Mostrar error si existe
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (provider.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(provider.errorMessage!),
-                backgroundColor: Theme.of(context).colorScheme.error,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            );
-            provider.clearError();
-          }
-        });
-
         return Scaffold(
           appBar: AppBar(
             title: const Text(
@@ -59,6 +42,17 @@ class _RouteSelectScreenState extends State<RouteSelectScreen>
             ),
             centerTitle: false,
             elevation: 0,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.settings_outlined),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SettingsScreen(),
+                  ),
+                ),
+              ),
+            ],
           ),
           body: provider.isLoading
               ? const Center(child: CircularProgressIndicator())
@@ -76,7 +70,8 @@ class _RouteSelectScreenState extends State<RouteSelectScreen>
                             onTap: () => _navigateToRoute(context, route),
                             onEdit: () =>
                                 _showEditDialog(context, provider, route),
-                            onDelete: () => provider.deleteRoute(route.id),
+                            onDelete: () =>
+                                _handleDeleteRoute(context, provider, route),
                           );
                         },
                       ),
@@ -88,6 +83,151 @@ class _RouteSelectScreenState extends State<RouteSelectScreen>
           ),
         );
       },
+    );
+  }
+
+  /// Maneja la eliminación de una ruta —
+  /// primero intenta sin forzar y si falla muestra el dialog de confirmación.
+  Future<void> _handleDeleteRoute(
+    BuildContext context,
+    RouteProvider provider,
+    RouteModel route,
+  ) async {
+    final deleted = await provider.deleteRoute(route.id);
+
+    if (deleted || !context.mounted) return;
+
+    // Tiene datos — obtener estadísticas y mostrar confirmación
+    final stats = await provider.getRouteStats(route.id);
+    if (!context.mounted) return;
+
+    await _showForceDeleteDialog(context, provider, route, stats);
+  }
+
+  Future<void> _showForceDeleteDialog(
+    BuildContext context,
+    RouteProvider provider,
+    RouteModel route,
+    RouteDeleteStats stats,
+  ) async {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded,
+                color: colorScheme.error, size: 24),
+            const SizedBox(width: 8),
+            const Text('Eliminar ruta'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'La ruta "${route.name}" contiene datos que '
+              'también serán eliminados permanentemente:',
+            ),
+            const SizedBox(height: 16),
+            // Estadísticas
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colorScheme.error.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: colorScheme.error.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Column(
+                children: [
+                  _buildStatRow(
+                    context: ctx,
+                    icon: Icons.people_outline,
+                    label: 'Clientes',
+                    value: '${stats.clientCount}',
+                  ),
+                  const SizedBox(height: 6),
+                  _buildStatRow(
+                    context: ctx,
+                    icon: Icons.payments_outlined,
+                    label: 'Pagos registrados',
+                    value: '${stats.paymentCount}',
+                  ),
+                  const SizedBox(height: 6),
+                  _buildStatRow(
+                    context: ctx,
+                    icon: Icons.receipt_outlined,
+                    label: 'Gastos',
+                    value: '${stats.expenseCount}',
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Esta acción no se puede deshacer.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.error,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: colorScheme.error,
+            ),
+            child: const Text('Eliminar todo'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      await provider.forceDeleteRoute(route.id);
+    }
+  }
+
+  Widget _buildStatRow({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: colorScheme.error),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
+          ),
+        ),
+        Text(
+          value,
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: colorScheme.error,
+          ),
+        ),
+      ],
     );
   }
 
@@ -139,7 +279,6 @@ class _RouteSelectScreenState extends State<RouteSelectScreen>
     );
   }
 
-  // Navega a HomeScreen con los providers inyectados
   void _navigateToRoute(BuildContext context, RouteModel route) {
     Navigator.push(
       context,
