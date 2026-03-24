@@ -1,3 +1,15 @@
+# MainActivity y componentes Android
+-keep class com.presto.app.MainActivity { *; }
+-keep public class * extends android.app.Activity
+-keep public class * extends android.app.Application
+-keep public class * extends android.app.Service
+-keep public class * extends android.content.BroadcastReceiver
+-keep public class * extends android.content.ContentProvider
+
+# Mantener MainActivity
+-keep class com.presto.app.MainActivity { *; }
+-keep class com.presto.app.** { *; }
+
 # Flutter
 -keep class io.flutter.app.** { *; }
 -keep class io.flutter.plugin.** { *; }
@@ -6,8 +18,10 @@
 -keep class io.flutter.** { *; }
 -keep class io.flutter.plugins.** { *; }
 -keep class io.flutter.embedding.** { *; }
+-keep class io.flutter.embedding.android.** { *; }
+-keep class io.flutter.embedding.engine.** { *; }
 
-# Google Play Core — clases faltantes reportadas por R8
+# Google Play Core
 -dontwarn com.google.android.play.core.splitcompat.SplitCompatApplication
 -dontwarn com.google.android.play.core.splitinstall.SplitInstallException
 -dontwarn com.google.android.play.core.splitinstall.SplitInstallManager
@@ -27,7 +41,7 @@
 # Provider
 -keep class * extends androidx.lifecycle.ViewModel { *; }
 
-# Mantener modelos de datos
+# Modelos de datos
 -keep class com.presto.app.** { *; }
 
 # Kotlin
@@ -41,7 +55,7 @@
     public <methods>;
 }
 
-# Gson / JSON
+# JSON
 -keepattributes Signature
 -keepattributes *Annotation*
 -dontwarn sun.misc.**
