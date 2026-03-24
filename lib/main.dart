@@ -46,8 +46,15 @@ class _PrestoAppState extends State<PrestoApp> {
   }
 
   Future<void> _initializeApp() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    FlutterNativeSplash.remove();
+    try {
+      // Pequeña pausa para que se vea el splash
+      await Future.delayed(const Duration(milliseconds: 500));
+    } catch (e) {
+      debugPrint('Error inicializando app: $e');
+    } finally {
+      // SIEMPRE remover el splash — incluso si hay error
+      FlutterNativeSplash.remove();
+    }
   }
 
   @override
