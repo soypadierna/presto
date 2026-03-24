@@ -3,7 +3,7 @@ description: App local para gestión de préstamos y cobros
 
 publish_to: 'none' 
 
-version: 1.7.0+8
+version: 1.8.0+9
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -24,6 +24,7 @@ dependencies:
   file_picker: ^10.3.10
   flutter_native_splash: ^2.4.7
   path_provider: ^2.1.5
+  image_picker: ^1.2.1
 
 dev_dependencies:
   flutter_test:

@@ -1,5 +1,10 @@
+/// Tipo de pago del cobro.
+enum PaymentMethod { cash, transfer }
+
+/// Estado del cobro.
 enum PaymentStatus { paid, skipped }
 
+/// Representa un cobro registrado en un día específico.
 class PaymentModel {
   final String id;
   final String clientId;
@@ -10,6 +15,12 @@ class PaymentModel {
   final String paymentDate;
   final String createdAt;
 
+  /// Tipo de pago: efectivo o transferencia.
+  final PaymentMethod paymentMethod;
+
+  /// Ruta local de la imagen del comprobante (solo para transferencias).
+  final String? imagePath;
+
   PaymentModel({
     required this.id,
     required this.clientId,
@@ -19,6 +30,8 @@ class PaymentModel {
     this.note,
     required this.paymentDate,
     required this.createdAt,
+    this.paymentMethod = PaymentMethod.cash,
+    this.imagePath,
   });
 
   factory PaymentModel.fromMap(Map<String, dynamic> map) {
@@ -33,6 +46,11 @@ class PaymentModel {
       note: map['note'] as String?,
       paymentDate: map['payment_date'] as String,
       createdAt: map['created_at'] as String,
+      paymentMethod: PaymentMethod.values.firstWhere(
+        (e) => e.name == (map['payment_method'] as String? ?? 'cash'),
+        orElse: () => PaymentMethod.cash,
+      ),
+      imagePath: map['image_path'] as String?,
     );
   }
 
@@ -46,6 +64,8 @@ class PaymentModel {
       'note': note,
       'payment_date': paymentDate,
       'created_at': createdAt,
+      'payment_method': paymentMethod.name,
+      'image_path': imagePath,
     };
   }
 
@@ -58,6 +78,9 @@ class PaymentModel {
     String? note,
     String? paymentDate,
     String? createdAt,
+    PaymentMethod? paymentMethod,
+    String? imagePath,
+    bool clearImage = false,
   }) {
     return PaymentModel(
       id: id ?? this.id,
@@ -68,6 +91,8 @@ class PaymentModel {
       note: note ?? this.note,
       paymentDate: paymentDate ?? this.paymentDate,
       createdAt: createdAt ?? this.createdAt,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      imagePath: clearImage ? null : imagePath ?? this.imagePath,
     );
   }
 }

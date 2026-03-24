@@ -1,6 +1,7 @@
 import 'package:uuid/uuid.dart';
 import '../../../core/database/database_helper.dart';
 import '../domain/payment_model.dart';
+import '../../../core/utils/image_helper.dart';
 
 class PaymentRepository {
   final _db = DatabaseHelper.instance;
@@ -42,6 +43,21 @@ class PaymentRepository {
     }
   }
 
+  Future<List<PaymentModel>> getPaymentsByClient(String clientId) async {
+    try {
+      final db = await _db.database;
+      final result = await db.query(
+        'payments',
+        where: 'client_id = ?',
+        whereArgs: [clientId],
+        orderBy: 'payment_date DESC',
+      );
+      return result.map((map) => PaymentModel.fromMap(map)).toList();
+    } catch (e) {
+      throw Exception('Error al obtener historial de pagos: $e');
+    }
+  }
+
   Future<void> insertPayment(PaymentModel payment) async {
     try {
       final db = await _db.database;
@@ -69,28 +85,29 @@ class PaymentRepository {
     }
   }
 
+  /// Elimina el pago y su imagen asociada si existe.
   Future<void> deletePayment(String id) async {
     try {
       final db = await _db.database;
+
+      // Obtener imagen antes de eliminar
+      final result = await db.query(
+        'payments',
+        columns: ['image_path'],
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+
+      if (result.isNotEmpty) {
+        final imagePath = result.first['image_path'] as String?;
+        if (imagePath != null) {
+          await ImageHelper.deleteImage(imagePath);
+        }
+      }
+
       await db.delete('payments', where: 'id = ?', whereArgs: [id]);
     } catch (e) {
       throw Exception('Error al eliminar pago: $e');
-    }
-  }
-
-  /// Retorna todos los pagos históricos de un cliente ordenados por fecha desc
-  Future<List<PaymentModel>> getPaymentsByClient(String clientId) async {
-    try {
-      final db = await _db.database;
-      final result = await db.query(
-        'payments',
-        where: 'client_id = ?',
-        whereArgs: [clientId],
-        orderBy: 'payment_date DESC',
-      );
-      return result.map((map) => PaymentModel.fromMap(map)).toList();
-    } catch (e) {
-      throw Exception('Error al obtener historial de pagos: $e');
     }
   }
 }
