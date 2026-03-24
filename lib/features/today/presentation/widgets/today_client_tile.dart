@@ -11,8 +11,15 @@ import '../../../../core/utils/dark_mode_helper.dart';
 
 class TodayClientTile extends StatelessWidget {
   final TodayClient todayClient;
+  final VoidCallback? onBeforeAction;
+  final VoidCallback? onAfterAction;
 
-  const TodayClientTile({super.key, required this.todayClient});
+  const TodayClientTile({
+    super.key,
+    required this.todayClient,
+    this.onBeforeAction,
+    this.onAfterAction,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -224,277 +231,279 @@ class TodayClientTile extends StatelessWidget {
   }
 
   Future<void> _showPaymentDialog(BuildContext context) async {
-  final provider = context.read<TodayProvider>();
-  final amountController = TextEditingController(
-    text: todayClient.client.credit.toStringAsFixed(0),
-  );
-  final noteController = TextEditingController();
-  final formKey = GlobalKey<FormState>();
+    onBeforeAction?.call();
 
-  // Estado local del dialog
-  PaymentMethod selectedMethod = PaymentMethod.cash;
-  String? selectedImagePath;
+    final provider = context.read<TodayProvider>();
+    final amountController = TextEditingController(
+      text: todayClient.client.credit.toStringAsFixed(0),
+    );
+    final noteController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
 
-  await showDialog(
-    context: context,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setDialogState) => AlertDialog(
-        title: Text('Cobro — ${todayClient.client.name}'),
-        content: SingleChildScrollView(
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Monto
-                TextFormField(
-                  controller: amountController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Monto',
-                    prefixText: '₡ ',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Ingresa el monto';
-                    if (double.tryParse(v) == null ||
-                        double.parse(v) <= 0) {
-                      return 'Monto inválido';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 14),
+    // Estado local del dialog
+    PaymentMethod selectedMethod = PaymentMethod.cash;
+    String? selectedImagePath;
 
-                // Tipo de pago
-                Text(
-                  'Tipo de pago',
-                  style: Theme.of(ctx).textTheme.labelLarge?.copyWith(
-                    color: Theme.of(ctx)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.7),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildPaymentMethodButton(
-                        ctx: ctx,
-                        label: 'Efectivo',
-                        icon: Icons.payments_outlined,
-                        method: PaymentMethod.cash,
-                        selected: selectedMethod,
-                        onTap: () => setDialogState(() {
-                          selectedMethod = PaymentMethod.cash;
-                          // Limpiar imagen si cambia a efectivo
-                          if (selectedImagePath != null) {
-                            ImageHelper.deleteImage(selectedImagePath!);
-                            selectedImagePath = null;
-                          }
-                        }),
-                      ),
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text('Cobro — ${todayClient.client.name}'),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Monto
+                  TextFormField(
+                    controller: amountController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Monto',
+                      prefixText: '₡ ',
+                      border: OutlineInputBorder(),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _buildPaymentMethodButton(
-                        ctx: ctx,
-                        label: 'Transferencia',
-                        icon: Icons.phone_android_outlined,
-                        method: PaymentMethod.transfer,
-                        selected: selectedMethod,
-                        onTap: () => setDialogState(() {
-                          selectedMethod = PaymentMethod.transfer;
-                        }),
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Adjuntar imagen (solo para transferencia)
-                if (selectedMethod == PaymentMethod.transfer) ...[
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Ingresa el monto';
+                      if (double.tryParse(v) == null || double.parse(v) <= 0) {
+                        return 'Monto inválido';
+                      }
+                      return null;
+                    },
+                  ),
                   const SizedBox(height: 14),
+
+                  // Tipo de pago
                   Text(
-                    'Comprobante',
+                    'Tipo de pago',
                     style: Theme.of(ctx).textTheme.labelLarge?.copyWith(
-                      color: Theme.of(ctx)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.7),
-                    ),
+                          color: Theme.of(ctx)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.7),
+                        ),
                   ),
                   const SizedBox(height: 8),
-
-                  // Preview de imagen o botón para adjuntar
-                  if (selectedImagePath != null)
-                    _buildImagePreview(
-                      ctx: ctx,
-                      imagePath: selectedImagePath!,
-                      onDelete: () => setDialogState(() {
-                        ImageHelper.deleteImage(selectedImagePath!);
-                        selectedImagePath = null;
-                      }),
-                    )
-                  else
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        final path =
-                            await ImageHelper.showImageSourceDialog(ctx);
-                        if (path != null) {
-                          setDialogState(() => selectedImagePath = path);
-                        }
-                      },
-                      icon: const Icon(Icons.attach_file, size: 18),
-                      label: const Text('Adjuntar comprobante'),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 44),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildPaymentMethodButton(
+                          ctx: ctx,
+                          label: 'Efectivo',
+                          icon: Icons.payments_outlined,
+                          method: PaymentMethod.cash,
+                          selected: selectedMethod,
+                          onTap: () => setDialogState(() {
+                            selectedMethod = PaymentMethod.cash;
+                            // Limpiar imagen si cambia a efectivo
+                            if (selectedImagePath != null) {
+                              ImageHelper.deleteImage(selectedImagePath!);
+                              selectedImagePath = null;
+                            }
+                          }),
+                        ),
                       ),
-                    ),
-                ],
-
-                const SizedBox(height: 12),
-
-                // Nota opcional
-                TextFormField(
-                  controller: noteController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nota (opcional)',
-                    border: OutlineInputBorder(),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _buildPaymentMethodButton(
+                          ctx: ctx,
+                          label: 'Transferencia',
+                          icon: Icons.phone_android_outlined,
+                          method: PaymentMethod.transfer,
+                          selected: selectedMethod,
+                          onTap: () => setDialogState(() {
+                            selectedMethod = PaymentMethod.transfer;
+                          }),
+                        ),
+                      ),
+                    ],
                   ),
-                  maxLines: 2,
-                ),
-              ],
+
+                  // Adjuntar imagen (solo para transferencia)
+                  if (selectedMethod == PaymentMethod.transfer) ...[
+                    const SizedBox(height: 14),
+                    Text(
+                      'Comprobante',
+                      style: Theme.of(ctx).textTheme.labelLarge?.copyWith(
+                            color: Theme.of(ctx)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.7),
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Preview de imagen o botón para adjuntar
+                    if (selectedImagePath != null)
+                      _buildImagePreview(
+                        ctx: ctx,
+                        imagePath: selectedImagePath!,
+                        onDelete: () => setDialogState(() {
+                          ImageHelper.deleteImage(selectedImagePath!);
+                          selectedImagePath = null;
+                        }),
+                      )
+                    else
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final path =
+                              await ImageHelper.showImageSourceDialog(ctx);
+                          if (path != null) {
+                            setDialogState(() => selectedImagePath = path);
+                          }
+                        },
+                        icon: const Icon(Icons.attach_file, size: 18),
+                        label: const Text('Adjuntar comprobante'),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 44),
+                        ),
+                      ),
+                  ],
+
+                  const SizedBox(height: 12),
+
+                  // Nota opcional
+                  TextFormField(
+                    controller: noteController,
+                    decoration: const InputDecoration(
+                      labelText: 'Nota (opcional)',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 2,
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              // Limpiar imagen si se cancela
-              if (selectedImagePath != null) {
-                ImageHelper.deleteImage(selectedImagePath!);
-              }
-              Navigator.pop(ctx);
-            },
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                provider.registerPayment(
-                  todayClient,
-                  double.parse(amountController.text),
-                  noteController.text.trim().isEmpty
-                      ? null
-                      : noteController.text.trim(),
-                  paymentMethod: selectedMethod,
-                  imagePath: selectedImagePath,
-                );
+          actions: [
+            TextButton(
+              onPressed: () {
+                // Limpiar imagen si se cancela
+                if (selectedImagePath != null) {
+                  ImageHelper.deleteImage(selectedImagePath!);
+                }
                 Navigator.pop(ctx);
-              }
-            },
-            child: const Text('Registrar'),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-Widget _buildPaymentMethodButton({
-  required BuildContext ctx,
-  required String label,
-  required IconData icon,
-  required PaymentMethod method,
-  required PaymentMethod selected,
-  required VoidCallback onTap,
-}) {
-  final theme = Theme.of(ctx);
-  final colorScheme = theme.colorScheme;
-  final isSelected = selected == method;
-
-  return GestureDetector(
-    onTap: onTap,
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: isSelected ? colorScheme.primary : colorScheme.surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isSelected
-              ? colorScheme.primary
-              : colorScheme.outline.withValues(alpha: 0.4),
+              },
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  provider.registerPayment(
+                    todayClient,
+                    double.parse(amountController.text),
+                    noteController.text.trim().isEmpty
+                        ? null
+                        : noteController.text.trim(),
+                    paymentMethod: selectedMethod,
+                    imagePath: selectedImagePath,
+                  );
+                  Navigator.pop(ctx);
+                  // Restaurar posición después de registrar
+                  onAfterAction?.call();
+                }
+              },
+              child: const Text('Registrar'),
+            ),
+          ],
         ),
       ),
-      child: Column(
-        children: [
-          Icon(
-            icon,
-            size: 22,
+    );
+  }
+
+  Widget _buildPaymentMethodButton({
+    required BuildContext ctx,
+    required String label,
+    required IconData icon,
+    required PaymentMethod method,
+    required PaymentMethod selected,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(ctx);
+    final colorScheme = theme.colorScheme;
+    final isSelected = selected == method;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? colorScheme.primary : colorScheme.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
             color: isSelected
-                ? colorScheme.onPrimary
-                : colorScheme.onSurface.withValues(alpha: 0.6),
+                ? colorScheme.primary
+                : colorScheme.outline.withValues(alpha: 0.4),
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 22,
               color: isSelected
                   ? colorScheme.onPrimary
-                  : colorScheme.onSurface,
-              fontWeight:
-                  isSelected ? FontWeight.w600 : FontWeight.normal,
+                  : colorScheme.onSurface.withValues(alpha: 0.6),
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color:
+                    isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-Widget _buildImagePreview({
-  required BuildContext ctx,
-  required String imagePath,
-  required VoidCallback onDelete,
-}) {
-  return Stack(
-    children: [
-      ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: Image.file(
-          File(imagePath),
-          width: double.infinity,
-          height: 140,
-          fit: BoxFit.cover,
+  Widget _buildImagePreview({
+    required BuildContext ctx,
+    required String imagePath,
+    required VoidCallback onDelete,
+  }) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Image.file(
+            File(imagePath),
+            width: double.infinity,
+            height: 140,
+            fit: BoxFit.cover,
+          ),
         ),
-      ),
-      Positioned(
-        top: 6,
-        right: 6,
-        child: GestureDetector(
-          onTap: onDelete,
-          child: Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.6),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.close,
-              color: Colors.white,
-              size: 16,
+        Positioned(
+          top: 6,
+          right: 6,
+          child: GestureDetector(
+            onTap: onDelete,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.6),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.close,
+                color: Colors.white,
+                size: 16,
+              ),
             ),
           ),
         ),
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
 
   Future<void> _showSkippedDialog(BuildContext context) async {
+    onBeforeAction?.call();
     final provider = context.read<TodayProvider>();
     final justificationController = TextEditingController();
 
@@ -526,6 +535,7 @@ Widget _buildImagePreview({
                     : justificationController.text.trim(),
               );
               Navigator.pop(ctx);
+              onAfterAction?.call();
             },
             style: FilledButton.styleFrom(
               backgroundColor: Colors.red.shade600,
