@@ -5,6 +5,17 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [2.1.0] - 2026-03-23
+
+### Mejorado
+- Dialog de pago reemplazado por Bottom Sheet más espacioso y natural
+- Dialog de "no dio" reemplazado por Bottom Sheet con autofocus
+- Selector de método de pago con botones grandes e íconos
+- Preview de imagen de comprobante dentro del Bottom Sheet
+- Indicador de carga al registrar un pago
+
+---
+
 ## [2.0.0] - 2026-03-23
 
 ### Agregado
