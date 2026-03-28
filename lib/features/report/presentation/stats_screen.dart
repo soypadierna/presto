@@ -499,17 +499,18 @@ class _StatsScreenState extends State<StatsScreen>
     );
   }
 
-  void _navigateToDayDetail(BuildContext context, DaySummary day) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => DayDetailScreen(
-          summary: day,
-          routeName: widget.route.name,
-        ),
+void _navigateToDayDetail(BuildContext context, DaySummary day) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => DayDetailScreen(
+        summary: day,
+        routeName: widget.route.name,
+        routeId: widget.route.id,
       ),
-    );
-  }
+    ),
+  );
+}
 
   String _monthName(int month) {
     const names = [

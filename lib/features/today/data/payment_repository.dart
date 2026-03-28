@@ -1,3 +1,4 @@
+import 'package:presto/features/clients/domain/client_model.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/database/database_helper.dart';
 import '../domain/payment_model.dart';
@@ -108,6 +109,31 @@ class PaymentRepository {
       await db.delete('payments', where: 'id = ?', whereArgs: [id]);
     } catch (e) {
       throw Exception('Error al eliminar pago: $e');
+    }
+  }
+
+  /// Retorna clientes de la ruta que no tienen pago en la fecha dada.
+  Future<List<ClientModel>> getClientsWithoutPayment(
+    String routeId,
+    String date,
+  ) async {
+    try {
+      final db = await _db.database;
+
+      final result = await db.rawQuery('''
+      SELECT c.* FROM clients c
+      WHERE c.route_id = ?
+        AND c.is_active = 1
+        AND c.id NOT IN (
+          SELECT p.client_id FROM payments p
+          WHERE p.route_id = ? AND p.payment_date = ?
+        )
+      ORDER BY c.position ASC
+    ''', [routeId, routeId, date]);
+
+      return result.map((map) => ClientModel.fromMap(map)).toList();
+    } catch (e) {
+      throw Exception('Error al obtener clientes sin pago: $e');
     }
   }
 }
