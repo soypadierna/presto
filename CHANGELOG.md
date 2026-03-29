@@ -5,6 +5,14 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [2.1.1] - 2026-03-23
+
+### Corregido
+- Error null al cambiar tipo de cobro en formulario de cliente nuevo
+- Bottom Sheets no podían acceder a TodayProvider por contexto separado
+
+---
+
 ## [2.1.0] - 2026-03-23
 
 ### Mejorado
