@@ -31,46 +31,41 @@ class TodayClientTile extends StatelessWidget {
     }
 
     // Pendiente: habilitar swipe
-return Dismissible(
-  key: Key('today_${todayClient.client.id}'),
-  confirmDismiss: (direction) async {
-    if (direction == DismissDirection.endToStart) {
-      onBeforeAction?.call();
-      // Usar el context del widget, no del builder
-      if (context.mounted) {
-        await SkippedBottomSheet.show(
-          context,
-          todayClient,
-          onAfterAction: onAfterAction,
-        );
-      }
-    } else {
-      onBeforeAction?.call();
-      if (context.mounted) {
-        await PaymentBottomSheet.show(
-          context,
-          todayClient,
-          onAfterAction: onAfterAction,
-        );
-      }
-    }
-    // Siempre retornar false — el Bottom Sheet maneja el estado
-    return false;
-  },
-  background: _buildSwipeBackground(
-    color: Colors.green.shade500,
-    icon: Icons.attach_money,
-    label: 'Pagó',
-    alignment: Alignment.centerLeft,
-  ),
-  secondaryBackground: _buildSwipeBackground(
-    color: Colors.red.shade500,
-    icon: Icons.money_off_outlined,
-    label: 'No dio',
-    alignment: Alignment.centerRight,
-  ),
-  child: _buildTileContent(context),
-);
+    return Dismissible(
+      key: Key('today_${todayClient.client.id}'),
+      // Reemplazar confirmDismiss en el Dismissible
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.endToStart) {
+          onBeforeAction?.call();
+          await SkippedBottomSheet.show(
+            context,
+            todayClient,
+            onAfterAction: onAfterAction,
+          );
+        } else {
+          onBeforeAction?.call();
+          await PaymentBottomSheet.show(
+            context,
+            todayClient,
+            onAfterAction: onAfterAction,
+          );
+        }
+        return false;
+      },
+      background: _buildSwipeBackground(
+        color: Colors.green.shade500,
+        icon: Icons.attach_money,
+        label: 'Pagó',
+        alignment: Alignment.centerLeft,
+      ),
+      secondaryBackground: _buildSwipeBackground(
+        color: Colors.red.shade500,
+        icon: Icons.money_off_outlined,
+        label: 'No dio',
+        alignment: Alignment.centerRight,
+      ),
+      child: _buildTileContent(context),
+    );
   }
 
   Widget _buildTileContent(BuildContext context) {
