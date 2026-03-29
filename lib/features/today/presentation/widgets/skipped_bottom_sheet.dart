@@ -14,9 +14,11 @@ class SkippedBottomSheet extends StatefulWidget {
     this.onAfterAction,
   });
 
+  // SkippedBottomSheet.show()
   static Future<void> show(
     BuildContext context,
     TodayClient todayClient, {
+    required TodayProvider provider,
     VoidCallback? onAfterAction,
   }) {
     return showModalBottomSheet(
@@ -27,9 +29,12 @@ class SkippedBottomSheet extends StatefulWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => SkippedBottomSheet(
-        todayClient: todayClient,
-        onAfterAction: onAfterAction,
+      builder: (_) => ChangeNotifierProvider.value(
+        value: provider,
+        child: SkippedBottomSheet(
+          todayClient: todayClient,
+          onAfterAction: onAfterAction,
+        ),
       ),
     );
   }

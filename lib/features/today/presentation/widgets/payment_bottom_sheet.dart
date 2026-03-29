@@ -18,9 +18,11 @@ class PaymentBottomSheet extends StatefulWidget {
     this.onAfterAction,
   });
 
+  // PaymentBottomSheet.show()
   static Future<void> show(
     BuildContext context,
     TodayClient todayClient, {
+    required TodayProvider provider,
     VoidCallback? onAfterAction,
   }) {
     return showModalBottomSheet(
@@ -31,9 +33,12 @@ class PaymentBottomSheet extends StatefulWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => PaymentBottomSheet(
-        todayClient: todayClient,
-        onAfterAction: onAfterAction,
+      builder: (_) => ChangeNotifierProvider.value(
+        value: provider,
+        child: PaymentBottomSheet(
+          todayClient: todayClient,
+          onAfterAction: onAfterAction,
+        ),
       ),
     );
   }
@@ -242,10 +247,7 @@ class _PaymentBottomSheetState extends State<PaymentBottomSheet> {
         width: 36,
         height: 4,
         decoration: BoxDecoration(
-          color: Theme.of(context)
-              .colorScheme
-              .outline
-              .withValues(alpha: 0.3),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(2),
         ),
       ),
@@ -320,9 +322,7 @@ class _PaymentBottomSheetState extends State<PaymentBottomSheet> {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected
-              ? colorScheme.primary
-              : colorScheme.surface,
+          color: isSelected ? colorScheme.primary : colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected
@@ -344,11 +344,9 @@ class _PaymentBottomSheetState extends State<PaymentBottomSheet> {
             Text(
               label,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: isSelected
-                    ? colorScheme.onPrimary
-                    : colorScheme.onSurface,
-                fontWeight:
-                    isSelected ? FontWeight.w600 : FontWeight.normal,
+                color:
+                    isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
           ],

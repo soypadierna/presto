@@ -34,7 +34,6 @@ class _ClientFormScreenState extends State<ClientFormScreen> {
   @override
   void initState() {
     super.initState();
-    // Pre-llenar si es edición
     if (_isEditing) {
       _nameController.text = widget.client!.name;
       _creditController.text = widget.client!.credit.toString();
@@ -61,12 +60,9 @@ class _ClientFormScreenState extends State<ClientFormScreen> {
       // Resetear paymentDays con valores por defecto según el tipo
       switch (type) {
         case PaymentType.daily:
-          // Mantener los días ya configurados o usar lunes-sábado por defecto
-          _paymentDays = widget.client!.paymentDays.containsKey('days')
-              ? Map.from(widget.client!.paymentDays)
-              : {
-                  'days': ['mon', 'tue', 'wed', 'thu', 'fri', 'sat']
-                };
+          _paymentDays = {
+            'days': ['mon', 'tue', 'wed', 'thu', 'fri', 'sat']
+          };
           break;
         case PaymentType.weekly:
           _paymentDays = {'day': 'mon'};
