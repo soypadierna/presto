@@ -31,22 +31,22 @@ class _ClientFormScreenState extends State<ClientFormScreen> {
 
   bool get _isEditing => widget.client != null;
 
-  @override
-  void initState() {
-    super.initState();
-    // Pre-llenar si es edición
-    if (_isEditing) {
-      _nameController.text = widget.client!.name;
-      _creditController.text = widget.client!.credit.toString();
-      _selectedType = widget.client!.paymentType;
-      _paymentDays = Map.from(widget.client!.paymentDays);
-    } else {
-      _selectedType = PaymentType.daily;
-      _paymentDays = {
-        'days': ['mon', 'tue', 'wed', 'thu', 'fri', 'sat']
-      };
-    }
+ @override
+void initState() {
+  super.initState();
+  if (_isEditing) {
+    _nameController.text = widget.client!.name;
+    _creditController.text = widget.client!.credit.toString();
+    _selectedType = widget.client!.paymentType;
+    // Solo acceder a paymentDays si estamos editando
+    _paymentDays = Map.from(widget.client!.paymentDays);
+  } else {
+    _selectedType = PaymentType.daily;
+    _paymentDays = {
+      'days': ['mon', 'tue', 'wed', 'thu', 'fri', 'sat']
+    };
   }
+}
 
   @override
   void dispose() {
@@ -56,32 +56,26 @@ class _ClientFormScreenState extends State<ClientFormScreen> {
   }
 
   void _onPaymentTypeChanged(PaymentType type) {
-    setState(() {
-      _selectedType = type;
-      // Resetear paymentDays con valores por defecto según el tipo
-      switch (type) {
-        case PaymentType.daily:
-          // Mantener los días ya configurados o usar lunes-sábado por defecto
-          _paymentDays = widget.client!.paymentDays.containsKey('days')
-              ? Map.from(widget.client!.paymentDays)
-              : {
-                  'days': ['mon', 'tue', 'wed', 'thu', 'fri', 'sat']
-                };
-          break;
-        case PaymentType.weekly:
-          _paymentDays = {'day': 'mon'};
-          break;
-        case PaymentType.biweekly:
-          _paymentDays = {
-            'dates': [1, 15]
-          };
-          break;
-        case PaymentType.monthly:
-          _paymentDays = {'date': 1};
-          break;
-      }
-    });
-  }
+  setState(() {
+    _selectedType = type;
+    switch (type) {
+      case PaymentType.daily:
+        _paymentDays = {
+          'days': ['mon', 'tue', 'wed', 'thu', 'fri', 'sat']
+        };
+        break;
+      case PaymentType.weekly:
+        _paymentDays = {'day': 'mon'};
+        break;
+      case PaymentType.biweekly:
+        _paymentDays = {'dates': [1, 15]};
+        break;
+      case PaymentType.monthly:
+        _paymentDays = {'date': 1};
+        break;
+    }
+  });
+}
 
   Future<void> _saveClient() async {
     if (!_formKey.currentState!.validate()) return;
