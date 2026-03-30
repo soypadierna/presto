@@ -4,6 +4,7 @@ import '../data/payment_repository.dart';
 import '../domain/today_client.dart';
 import '../domain/payment_model.dart';
 import '../../clients/data/client_repository.dart';
+import '../../clients/domain/client_model.dart';
 
 class TodayProvider extends ChangeNotifier {
   final ClientRepository _clientRepository = ClientRepository();
@@ -32,6 +33,23 @@ class TodayProvider extends ChangeNotifier {
   void clearError() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  /// IDs de clientes que ya están en la lista del día
+  Set<String> get todayClientIds =>
+      _todayClients.map((tc) => tc.client.id).toSet();
+
+  /// Retorna clientes activos que NO están en la lista del día
+  Future<List<ClientModel>> getClientsNotInList(String routeId) async {
+    try {
+      final allClients = await _clientRepository.getClientsByRoute(routeId);
+      // Usar _todayClients actualizado en memoria
+      final existingIds = _todayClients.map((tc) => tc.client.id).toSet();
+      return allClients.where((c) => !existingIds.contains(c.id)).toList();
+    } catch (e) {
+      debugPrint('Error obteniendo clientes fuera de lista: $e');
+      return [];
+    }
   }
 
   Future<void> loadTodayClients(String routeId, {DateTime? date}) async {
@@ -68,7 +86,8 @@ class TodayProvider extends ChangeNotifier {
     }
   }
 
-  /// Registra un pago con tipo de método e imagen opcional.
+  /// Registra un pago. Si el cliente no está en la lista del día
+  /// lo agrega automáticamente después de registrar.
   Future<void> registerPayment(
     TodayClient todayClient,
     double amount,
@@ -77,16 +96,18 @@ class TodayProvider extends ChangeNotifier {
     String? imagePath,
   }) async {
     try {
+      debugPrint('=== registerPayment iniciado ===');
+      debugPrint('Cliente: ${todayClient.client.name}');
+      debugPrint('Monto: $amount');
+      debugPrint('Clientes en lista: ${_todayClients.length}');
+
       final dateStr = _formatDate(_selectedDate);
       final existing = await _paymentRepository.getPaymentByClientAndDate(
         todayClient.client.id,
         dateStr,
       );
 
-      // Si había imagen anterior y se está reemplazando, eliminarla
-      if (existing?.imagePath != null && existing!.imagePath != imagePath) {
-        await _paymentRepository.deletePayment(existing.id);
-      }
+      debugPrint('Pago existente: ${existing?.id}');
 
       final payment = PaymentModel(
         id: existing?.id ?? const Uuid().v4(),
@@ -103,15 +124,43 @@ class TodayProvider extends ChangeNotifier {
 
       if (existing != null) {
         await _paymentRepository.updatePayment(payment);
+        debugPrint('Pago actualizado en DB');
       } else {
         await _paymentRepository.insertPayment(payment);
+        debugPrint('Pago insertado en DB');
       }
 
-      await loadTodayClients(_currentRouteId, date: _selectedDate);
+      final clientAlreadyInList = _todayClients.any(
+        (tc) => tc.client.id == todayClient.client.id,
+      );
+
+      debugPrint('Cliente ya en lista: $clientAlreadyInList');
+
+      if (clientAlreadyInList) {
+        _todayClients = _todayClients.map((tc) {
+          if (tc.client.id == todayClient.client.id) {
+            return tc.copyWith(payment: payment);
+          }
+          return tc;
+        }).toList();
+      } else {
+        _todayClients = [
+          ..._todayClients,
+          TodayClient(
+            client: todayClient.client,
+            payment: payment,
+          ),
+        ];
+      }
+
+      debugPrint('Clientes en lista después: ${_todayClients.length}');
+      debugPrint('Total cobrado: $totalCollected');
+      notifyListeners();
+      debugPrint('notifyListeners llamado');
     } catch (e) {
+      debugPrint('ERROR en registerPayment: $e');
       _errorMessage = 'No se pudo registrar el pago';
       notifyListeners();
-      debugPrint('Error registrando pago: $e');
     }
   }
 

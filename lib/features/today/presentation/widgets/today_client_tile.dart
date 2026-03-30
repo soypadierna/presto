@@ -22,33 +22,39 @@ class TodayClientTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Si ya está registrado solo permitir long press para deshacer
+    // Capturar el provider aquí donde sí existe en el árbol
+    final provider = context.read<TodayProvider>();
+
     if (!todayClient.isPending) {
       return GestureDetector(
-        onLongPress: () => _showUndoConfirmation(context),
+        onLongPress: () => _showUndoConfirmation(context, provider),
         child: _buildTileContent(context),
       );
     }
 
-    // Pendiente: habilitar swipe
     return Dismissible(
       key: Key('today_${todayClient.client.id}'),
-      // Reemplazar confirmDismiss en el Dismissible
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.endToStart) {
           onBeforeAction?.call();
-          await SkippedBottomSheet.show(
-            context,
-            todayClient,
-            onAfterAction: onAfterAction,
-          );
+          if (context.mounted) {
+            await SkippedBottomSheet.show(
+              context,
+              todayClient,
+              provider: provider,
+              onAfterAction: onAfterAction,
+            );
+          }
         } else {
           onBeforeAction?.call();
-          await PaymentBottomSheet.show(
-            context,
-            todayClient,
-            onAfterAction: onAfterAction,
-          );
+          if (context.mounted) {
+            await PaymentBottomSheet.show(
+              context,
+              todayClient,
+              provider: provider,
+              onAfterAction: onAfterAction,
+            );
+          }
         }
         return false;
       },
@@ -240,8 +246,10 @@ class TodayClientTile extends StatelessWidget {
     );
   }
 
-  Future<void> _showUndoConfirmation(BuildContext context) async {
-    final provider = context.read<TodayProvider>();
+  Future<void> _showUndoConfirmation(
+    BuildContext context,
+    TodayProvider provider,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(

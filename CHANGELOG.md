@@ -5,6 +5,29 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [2.2.0] - 2026-03-23
+
+### Agregado
+- Botón en AppBar de TodayScreen para registrar abono fuera del calendario
+- `ClientPickerBottomSheet` para seleccionar clientes no programados para hoy
+- Búsqueda en tiempo real dentro del selector de clientes
+- `getClientsNotInList()` en TodayProvider
+- `todayClientIds` getter para identificar clientes ya en la lista
+
+### Corregido
+- Cliente registrado fuera del calendario ahora aparece en la lista
+  del día y en el balance inmediatamente después de registrar el pago
+
+---
+
+## [2.1.1] - 2026-03-23
+
+### Corregido
+- Error null al cambiar tipo de cobro en formulario de cliente nuevo
+- Bottom Sheets no podían acceder a TodayProvider por contexto separado
+
+---
+
 ## [2.1.0] - 2026-03-23
 
 ### Mejorado
