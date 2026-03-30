@@ -120,14 +120,51 @@ class TodayClientTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   _buildSubtitle(context),
+                  // Badge de reagendado
+                  if (todayClient.isRescheduled) ...[
+                    const SizedBox(height: 4),
+                    _buildRescheduledBadge(context),
+                  ],
                 ],
               ),
             ),
 
-            // Badge de estado
             _buildStatusBadge(context),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildRescheduledBadge(BuildContext context) {
+    final scheduled = todayClient.scheduledPayment!;
+    final date = DateTime.parse(scheduled.scheduledDate);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.amber.shade50,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.amber.shade300),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.event_outlined,
+            size: 12,
+            color: Colors.amber.shade700,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            'Agendado · ${Formatters.formatShortDate(date)}',
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.amber.shade800,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -279,32 +316,36 @@ class TodayClientTile extends StatelessWidget {
   Color _borderColor(BuildContext context) {
     if (todayClient.isPaid) return DarkModeHelper.paidBorder(context);
     if (todayClient.isSkipped) return DarkModeHelper.skippedBorder(context);
+    if (todayClient.isRescheduled) return Colors.amber.shade300;
     return Theme.of(context).colorScheme.outline.withValues(alpha: 0.2);
   }
 
   Color _backgroundColor(BuildContext context) {
     if (todayClient.isPaid) return DarkModeHelper.paidBackground(context);
     if (todayClient.isSkipped) return DarkModeHelper.skippedBackground(context);
+    if (todayClient.isRescheduled) return Colors.amber.shade50;
     return Theme.of(context).colorScheme.surface;
   }
 
   Color _iconBackgroundColor(BuildContext context) {
     if (todayClient.isPaid) return DarkModeHelper.paidIconBackground(context);
-    if (todayClient.isSkipped) {
+    if (todayClient.isSkipped)
       return DarkModeHelper.skippedIconBackground(context);
-    }
+    if (todayClient.isRescheduled) return Colors.amber.shade100;
     return Theme.of(context).colorScheme.primary.withValues(alpha: 0.1);
   }
 
   Color _iconColor(BuildContext context) {
     if (todayClient.isPaid) return Colors.green.shade400;
     if (todayClient.isSkipped) return Colors.red.shade400;
+    if (todayClient.isRescheduled) return Colors.amber.shade700;
     return Theme.of(context).colorScheme.primary;
   }
 
   IconData _statusIcon() {
     if (todayClient.isPaid) return Icons.check_circle_outline;
     if (todayClient.isSkipped) return Icons.cancel_outlined;
+    if (todayClient.isRescheduled) return Icons.event_outlined;
     return Icons.person_outline;
   }
 }

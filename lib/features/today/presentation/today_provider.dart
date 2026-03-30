@@ -1,14 +1,18 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../data/payment_repository.dart';
+import '../data/scheduled_payment_repository.dart';
 import '../domain/today_client.dart';
 import '../domain/payment_model.dart';
+import '../domain/scheduled_payment_model.dart';
 import '../../clients/data/client_repository.dart';
 import '../../clients/domain/client_model.dart';
 
 class TodayProvider extends ChangeNotifier {
   final ClientRepository _clientRepository = ClientRepository();
   final PaymentRepository _paymentRepository = PaymentRepository();
+  final ScheduledPaymentRepository _scheduledRepository =
+      ScheduledPaymentRepository();
 
   List<TodayClient> _todayClients = [];
   bool _isLoading = false;
@@ -30,26 +34,13 @@ class TodayProvider extends ChangeNotifier {
   int get skippedCount => _todayClients.where((tc) => tc.isSkipped).length;
   int get pendingCount => _todayClients.where((tc) => tc.isPending).length;
 
-  void clearError() {
-    _errorMessage = null;
-    notifyListeners();
-  }
-
-  /// IDs de clientes que ya están en la lista del día
+  /// IDs de clientes ya en la lista del día
   Set<String> get todayClientIds =>
       _todayClients.map((tc) => tc.client.id).toSet();
 
-  /// Retorna clientes activos que NO están en la lista del día
-  Future<List<ClientModel>> getClientsNotInList(String routeId) async {
-    try {
-      final allClients = await _clientRepository.getClientsByRoute(routeId);
-      // Usar _todayClients actualizado en memoria
-      final existingIds = _todayClients.map((tc) => tc.client.id).toSet();
-      return allClients.where((c) => !existingIds.contains(c.id)).toList();
-    } catch (e) {
-      debugPrint('Error obteniendo clientes fuera de lista: $e');
-      return [];
-    }
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
   }
 
   Future<void> loadTodayClients(String routeId, {DateTime? date}) async {
@@ -60,23 +51,62 @@ class TodayProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final dateStr = _formatDate(_selectedDate);
+
+      // 1. Clientes del calendario
       final clients = await _clientRepository.getClientsForToday(
         routeId,
         _selectedDate,
       );
 
-      final dateStr = _formatDate(_selectedDate);
+      // 2. Pagos del día
       final payments = await _paymentRepository.getPaymentsByDate(
         routeId,
         dateStr,
       );
 
+      // 3. Cobros reagendados para hoy
+      final scheduled = await _scheduledRepository.getScheduledPaymentsForDate(
+          routeId, dateStr);
+
+      // 4. Combinar clientes del calendario con sus pagos
       _todayClients = clients.map((client) {
         final matchingPayments = payments.where((p) => p.clientId == client.id);
         final payment =
             matchingPayments.isNotEmpty ? matchingPayments.first : null;
-        return TodayClient(client: client, payment: payment);
+        final scheduledPayment =
+            scheduled.where((s) => s.clientId == client.id).firstOrNull;
+
+        return TodayClient(
+          client: client,
+          payment: payment,
+          scheduledPayment: scheduledPayment,
+        );
       }).toList();
+
+      // 5. Agregar clientes reagendados que no están en el calendario
+      final calendarIds = clients.map((c) => c.id).toSet();
+      final extraScheduled =
+          scheduled.where((s) => !calendarIds.contains(s.clientId));
+
+      for (final sched in extraScheduled) {
+        // Buscar el cliente
+        final allClients = await _clientRepository.getClientsByRoute(routeId);
+        final client =
+            allClients.where((c) => c.id == sched.clientId).firstOrNull;
+
+        if (client == null) continue;
+
+        final matchingPayments = payments.where((p) => p.clientId == client.id);
+        final payment =
+            matchingPayments.isNotEmpty ? matchingPayments.first : null;
+
+        _todayClients.add(TodayClient(
+          client: client,
+          payment: payment,
+          scheduledPayment: sched,
+        ));
+      }
     } catch (e) {
       _errorMessage = 'No se pudo cargar la lista del día';
       debugPrint('Error cargando lista del día: $e');
@@ -86,8 +116,6 @@ class TodayProvider extends ChangeNotifier {
     }
   }
 
-  /// Registra un pago. Si el cliente no está en la lista del día
-  /// lo agrega automáticamente después de registrar.
   Future<void> registerPayment(
     TodayClient todayClient,
     double amount,
@@ -96,18 +124,11 @@ class TodayProvider extends ChangeNotifier {
     String? imagePath,
   }) async {
     try {
-      debugPrint('=== registerPayment iniciado ===');
-      debugPrint('Cliente: ${todayClient.client.name}');
-      debugPrint('Monto: $amount');
-      debugPrint('Clientes en lista: ${_todayClients.length}');
-
       final dateStr = _formatDate(_selectedDate);
       final existing = await _paymentRepository.getPaymentByClientAndDate(
         todayClient.client.id,
         dateStr,
       );
-
-      debugPrint('Pago existente: ${existing?.id}');
 
       final payment = PaymentModel(
         id: existing?.id ?? const Uuid().v4(),
@@ -124,22 +145,29 @@ class TodayProvider extends ChangeNotifier {
 
       if (existing != null) {
         await _paymentRepository.updatePayment(payment);
-        debugPrint('Pago actualizado en DB');
       } else {
         await _paymentRepository.insertPayment(payment);
-        debugPrint('Pago insertado en DB');
       }
 
+      // Eliminar reagendamiento si existe
+      if (todayClient.scheduledPayment != null) {
+        await _scheduledRepository.deleteScheduledPaymentByClient(
+          todayClient.client.id,
+        );
+      }
+
+      // Actualizar lista en memoria
       final clientAlreadyInList = _todayClients.any(
         (tc) => tc.client.id == todayClient.client.id,
       );
 
-      debugPrint('Cliente ya en lista: $clientAlreadyInList');
-
       if (clientAlreadyInList) {
         _todayClients = _todayClients.map((tc) {
           if (tc.client.id == todayClient.client.id) {
-            return tc.copyWith(payment: payment);
+            return tc.copyWith(
+              payment: payment,
+              clearScheduled: true,
+            );
           }
           return tc;
         }).toList();
@@ -153,14 +181,11 @@ class TodayProvider extends ChangeNotifier {
         ];
       }
 
-      debugPrint('Clientes en lista después: ${_todayClients.length}');
-      debugPrint('Total cobrado: $totalCollected');
       notifyListeners();
-      debugPrint('notifyListeners llamado');
     } catch (e) {
-      debugPrint('ERROR en registerPayment: $e');
       _errorMessage = 'No se pudo registrar el pago';
       notifyListeners();
+      debugPrint('Error registrando pago: $e');
     }
   }
 
@@ -192,7 +217,14 @@ class TodayProvider extends ChangeNotifier {
         await _paymentRepository.insertPayment(payment);
       }
 
-      await loadTodayClients(_currentRouteId, date: _selectedDate);
+      _todayClients = _todayClients.map((tc) {
+        if (tc.client.id == todayClient.client.id) {
+          return tc.copyWith(payment: payment);
+        }
+        return tc;
+      }).toList();
+
+      notifyListeners();
     } catch (e) {
       _errorMessage = 'No se pudo registrar el estado';
       notifyListeners();
@@ -200,15 +232,75 @@ class TodayProvider extends ChangeNotifier {
     }
   }
 
+  /// Reagenda el cobro de un cliente para una fecha futura.
+  Future<void> reschedulePayment(
+    TodayClient todayClient,
+    DateTime scheduledDate,
+    String? note,
+  ) async {
+    try {
+      // Eliminar reagendamiento anterior si existe
+      await _scheduledRepository.deleteScheduledPaymentByClient(
+        todayClient.client.id,
+      );
+
+      // Crear nuevo reagendamiento
+      final scheduled = ScheduledPaymentModel(
+        id: const Uuid().v4(),
+        clientId: todayClient.client.id,
+        routeId: _currentRouteId,
+        scheduledDate: _formatDate(scheduledDate),
+        note: note,
+        createdAt: DateTime.now().toIso8601String(),
+      );
+
+      await _scheduledRepository.insertScheduledPayment(scheduled);
+
+      // Actualizar en memoria
+      _todayClients = _todayClients.map((tc) {
+        if (tc.client.id == todayClient.client.id) {
+          return tc.copyWith(scheduledPayment: scheduled);
+        }
+        return tc;
+      }).toList();
+
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'No se pudo reagendar el cobro';
+      notifyListeners();
+      debugPrint('Error reagendando cobro: $e');
+    }
+  }
+
   Future<void> undoPayment(TodayClient todayClient) async {
     try {
       if (todayClient.payment == null) return;
       await _paymentRepository.deletePayment(todayClient.payment!.id);
-      await loadTodayClients(_currentRouteId, date: _selectedDate);
+
+      _todayClients = _todayClients.map((tc) {
+        if (tc.client.id == todayClient.client.id) {
+          return tc.copyWith(clearPayment: true);
+        }
+        return tc;
+      }).toList();
+
+      notifyListeners();
     } catch (e) {
       _errorMessage = 'No se pudo deshacer el registro';
       notifyListeners();
       debugPrint('Error deshaciendo pago: $e');
+    }
+  }
+
+  /// Retorna clientes activos que NO están en la lista del día.
+  Future<List<ClientModel>> getClientsNotInList(String routeId) async {
+    try {
+      final allClients = await _clientRepository.getClientsByRoute(routeId);
+      final existingIds = _todayClients.map((tc) => tc.client.id).toSet();
+      return allClients.where((c) => !existingIds.contains(c.id)).toList();
+    } catch (e) {
+      debugPrint('Error obteniendo clientes fuera de lista: $e');
+      return [];
     }
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../domain/today_client.dart';
 import '../today_provider.dart';
+import 'reschedule_bottom_sheet.dart';
 
 /// Bottom Sheet para registrar que un cliente no dio.
 class SkippedBottomSheet extends StatefulWidget {
@@ -14,7 +15,6 @@ class SkippedBottomSheet extends StatefulWidget {
     this.onAfterAction,
   });
 
-  // SkippedBottomSheet.show()
   static Future<void> show(
     BuildContext context,
     TodayClient todayClient, {
@@ -147,37 +147,50 @@ class _SkippedBottomSheetState extends State<SkippedBottomSheet> {
                 ),
                 const SizedBox(height: 24),
 
-                // Botón confirmar
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: FilledButton.icon(
-                    onPressed: _isLoading ? null : _register,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.red.shade600,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                // Dos botones de acción
+                Row(
+                  children: [
+                    // Solo registrar
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _isLoading ? null : _registerOnly,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red.shade600,
+                          side: BorderSide(color: Colors.red.shade300),
+                          minimumSize: const Size(0, 52),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: const Icon(Icons.cancel_outlined, size: 18),
+                        label: const Text(
+                          'Solo registrar',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
                       ),
                     ),
-                    icon: _isLoading
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.cancel_outlined),
-                    label: Text(
-                      _isLoading ? 'Registrando...' : 'Confirmar — No dio',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                    const SizedBox(width: 10),
+
+                    // Registrar y agendar
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: _isLoading ? null : _registerAndSchedule,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.amber.shade600,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(0, 52),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: const Icon(Icons.event_outlined, size: 18),
+                        label: const Text(
+                          'Agendar',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
                 const SizedBox(height: 16),
               ],
@@ -188,9 +201,29 @@ class _SkippedBottomSheetState extends State<SkippedBottomSheet> {
     );
   }
 
-  Future<void> _register() async {
+  /// Solo registra el "no dio" sin reagendar.
+  Future<void> _registerOnly() async {
     setState(() => _isLoading = true);
+    try {
+      final provider = context.read<TodayProvider>();
+      await provider.registerSkipped(
+        widget.todayClient,
+        _justificationController.text.trim().isEmpty
+            ? null
+            : _justificationController.text.trim(),
+      );
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onAfterAction?.call();
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
 
+  /// Registra el "no dio" y luego abre el Bottom Sheet de reagendamiento.
+  Future<void> _registerAndSchedule() async {
+    setState(() => _isLoading = true);
     try {
       final provider = context.read<TodayProvider>();
       await provider.registerSkipped(
@@ -201,8 +234,16 @@ class _SkippedBottomSheetState extends State<SkippedBottomSheet> {
       );
 
       if (mounted) {
+        // Cerrar este Bottom Sheet
         Navigator.pop(context);
         widget.onAfterAction?.call();
+
+        // Abrir Bottom Sheet de reagendamiento
+        await RescheduleBottomSheet.show(
+          context,
+          widget.todayClient,
+          provider: provider,
+        );
       }
     } catch (e) {
       setState(() => _isLoading = false);
