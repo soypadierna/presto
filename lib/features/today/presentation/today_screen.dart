@@ -7,6 +7,8 @@ import 'today_provider.dart';
 import 'widgets/today_client_tile.dart';
 import 'widgets/today_summary_card.dart';
 import '../../../../core/error/error_listener.dart';
+import 'widgets/client_picker_bottom_sheet.dart';
+import 'widgets/payment_bottom_sheet.dart';
 
 /// Filtros disponibles para la lista del día.
 enum TodayFilter { all, pending, paid, skipped }
@@ -22,7 +24,6 @@ class TodayScreen extends StatefulWidget {
 
 class _TodayScreenState extends State<TodayScreen>
     with ErrorListenerMixin, AutomaticKeepAliveClientMixin {
-
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
   String _searchQuery = '';
@@ -81,9 +82,8 @@ class _TodayScreenState extends State<TodayScreen>
     // Aplicar búsqueda por nombre
     if (_searchQuery.isNotEmpty) {
       filtered = filtered
-          .where((tc) => tc.client.name
-              .toLowerCase()
-              .contains(_searchQuery.toLowerCase()))
+          .where((tc) =>
+              tc.client.name.toLowerCase().contains(_searchQuery.toLowerCase()))
           .toList();
     }
 
@@ -130,6 +130,17 @@ class _TodayScreenState extends State<TodayScreen>
             ),
           ],
         ),
+        actions: [
+          Consumer<TodayProvider>(
+            builder: (context, provider, _) {
+              return IconButton(
+                icon: const Icon(Icons.person_add_outlined),
+                tooltip: 'Registrar abono',
+                onPressed: () => _showClientPicker(context, provider),
+              );
+            },
+          ),
+        ],
       ),
       body: Consumer<TodayProvider>(
         builder: (context, provider, _) {
@@ -187,8 +198,7 @@ class _TodayScreenState extends State<TodayScreen>
                             padding: const EdgeInsets.only(bottom: 24),
                             itemCount: filtered.length,
                             cacheExtent: 500,
-                            itemBuilder: (context, index) =>
-                                RepaintBoundary(
+                            itemBuilder: (context, index) => RepaintBoundary(
                               child: TodayClientTile(
                                 key: ValueKey(filtered[index].client.id),
                                 todayClient: filtered[index],
@@ -275,7 +285,8 @@ class _TodayScreenState extends State<TodayScreen>
           color: isActive ? color : colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isActive ? color : colorScheme.outline.withValues(alpha: 0.3),
+            color:
+                isActive ? color : colorScheme.outline.withValues(alpha: 0.3),
           ),
         ),
         child: Row(
@@ -285,8 +296,7 @@ class _TodayScreenState extends State<TodayScreen>
               label,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: isActive ? Colors.white : colorScheme.onSurface,
-                fontWeight:
-                    isActive ? FontWeight.w600 : FontWeight.normal,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
             const SizedBox(width: 6),
@@ -357,8 +367,7 @@ class _TodayScreenState extends State<TodayScreen>
           if (_activeFilter != TodayFilter.all) ...[
             const SizedBox(height: 12),
             TextButton(
-              onPressed: () =>
-                  setState(() => _activeFilter = TodayFilter.all),
+              onPressed: () => setState(() => _activeFilter = TodayFilter.all),
               child: const Text('Ver todos'),
             ),
           ],
@@ -394,6 +403,40 @@ class _TodayScreenState extends State<TodayScreen>
           ),
         ],
       ),
+    );
+  }
+
+  /// Abre el selector de clientes fuera del calendario
+  /// y luego el Bottom Sheet de pago.
+  Future<void> _showClientPicker(
+    BuildContext context,
+    TodayProvider provider,
+  ) async {
+    final clients = await provider.getClientsNotInList(widget.route.id);
+
+    if (!context.mounted) return;
+
+    final selectedClient = await ClientPickerBottomSheet.show(
+      context,
+      clients: clients,
+    );
+
+    if (selectedClient == null || !context.mounted) return;
+
+    final tempTodayClient = TodayClient(
+      client: selectedClient,
+      payment: null,
+    );
+
+    if (!context.mounted) return;
+
+    await PaymentBottomSheet.show(
+      context,
+      tempTodayClient,
+      provider: provider,
+      // NO llamar loadTodayClients aquí — el provider ya actualizó
+      // _todayClients en memoria directamente
+      onAfterAction: null,
     );
   }
 }
