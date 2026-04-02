@@ -5,6 +5,19 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [2.4.0] - 2026-03-23
+
+### Agregado
+- Navegación por fechas en TodayScreen con flechas anterior/siguiente
+- Selector de fecha al tocar la fecha central
+- Etiquetas especiales: "Hoy", "Ayer", "Mañana"
+- Punto indicador bajo la fecha cuando es hoy
+- Animación suave al cambiar de fecha
+- Al cambiar fecha se resetean filtros y búsqueda automáticamente
+- Estado vacío diferenciado para hoy vs otros días
+
+---
+
 ## [2.3.0] - 2026-03-23
 
 ### Agregado
