@@ -48,6 +48,9 @@ class TodayProvider extends ChangeNotifier {
     _selectedDate = date ?? DateTime.now();
     _isLoading = true;
     _errorMessage = null;
+
+    // Limpiar lista inmediatamente para no mostrar datos del día anterior
+    _todayClients = [];
     notifyListeners();
 
     try {
@@ -84,17 +87,15 @@ class TodayProvider extends ChangeNotifier {
         );
       }).toList();
 
-      // 5. Agregar clientes reagendados que no están en el calendario
+      // 5. Agregar clientes reagendados fuera del calendario
       final calendarIds = clients.map((c) => c.id).toSet();
       final extraScheduled =
           scheduled.where((s) => !calendarIds.contains(s.clientId));
 
       for (final sched in extraScheduled) {
-        // Buscar el cliente
         final allClients = await _clientRepository.getClientsByRoute(routeId);
         final client =
             allClients.where((c) => c.id == sched.clientId).firstOrNull;
-
         if (client == null) continue;
 
         final matchingPayments = payments.where((p) => p.clientId == client.id);
