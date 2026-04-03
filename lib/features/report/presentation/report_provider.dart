@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:presto/features/today/data/refinance_repository.dart';
+import 'package:presto/features/today/domain/refinance_model.dart';
 import 'package:uuid/uuid.dart';
 import '../data/expense_repository.dart';
 import '../data/daily_base_repository.dart';
@@ -8,6 +10,9 @@ import '../domain/daily_base_model.dart';
 class ReportProvider extends ChangeNotifier {
   final ExpenseRepository _expenseRepository = ExpenseRepository();
   final DailyBaseRepository _baseRepository = DailyBaseRepository();
+  final RefinanceRepository _refinanceRepository = RefinanceRepository();
+  List<RefinanceModel> _refinances = [];
+  List<RefinanceModel> get refinances => _refinances;
 
   List<ExpenseModel> _expenses = [];
   DailyBaseModel? _dailyBase;
@@ -23,8 +28,9 @@ class ReportProvider extends ChangeNotifier {
   DateTime get selectedDate => _selectedDate;
   String? get errorMessage => _errorMessage;
 
-  double get totalExpenses =>
-      _expenses.fold(0, (sum, e) => sum + e.amount);
+  double get totalRefinanced => _refinances.fold(0, (sum, r) => sum + r.amount);
+
+  double get totalExpenses => _expenses.fold(0, (sum, e) => sum + e.amount);
   double get baseAmount => _dailyBase?.amount ?? 0;
 
   void clearError() {
@@ -46,6 +52,10 @@ class ReportProvider extends ChangeNotifier {
         dateStr,
       );
       _dailyBase = await _baseRepository.getBaseByDate(routeId, dateStr);
+      _refinances = await _refinanceRepository.getRefinancesByDate(
+        routeId,
+        dateStr,
+      );
     } catch (e) {
       _errorMessage = 'No se pudo cargar el informe';
       debugPrint('Error cargando reporte: $e');

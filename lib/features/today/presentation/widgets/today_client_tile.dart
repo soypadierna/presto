@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:presto/features/today/domain/refinance_model.dart';
 
 import 'package:presto/features/today/presentation/widgets/payment_bottom_sheet.dart';
+import 'package:presto/features/today/presentation/widgets/refinance_bottom_sheet.dart';
 import 'package:presto/features/today/presentation/widgets/skipped_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 import '../../domain/today_client.dart';
@@ -22,7 +24,6 @@ class TodayClientTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Capturar el provider aquí donde sí existe en el árbol
     final provider = context.read<TodayProvider>();
 
     if (!todayClient.isPending) {
@@ -70,7 +71,154 @@ class TodayClientTile extends StatelessWidget {
         label: 'No dio',
         alignment: Alignment.centerRight,
       ),
-      child: _buildTileContent(context),
+      child: GestureDetector(
+        onLongPress: () => _showContextMenu(context, provider),
+        child: _buildTileContent(context),
+      ),
+    );
+  }
+
+  /// Muestra menú contextual con opciones para el cliente.
+  Future<void> _showContextMenu(
+    BuildContext context,
+    TodayProvider provider,
+  ) async {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colorScheme.outline.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+
+              // Nombre del cliente
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      todayClient.client.name,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const Divider(height: 1),
+
+              // Opciones
+              ListTile(
+                leading: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.attach_money,
+                    color: Colors.green.shade600,
+                    size: 20,
+                  ),
+                ),
+                title: const Text('Registrar pago'),
+                subtitle: const Text('El cliente pagó hoy'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  onBeforeAction?.call();
+                  await PaymentBottomSheet.show(
+                    context,
+                    todayClient,
+                    provider: provider,
+                    onAfterAction: onAfterAction,
+                  );
+                },
+              ),
+
+              ListTile(
+                leading: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.money_off_outlined,
+                    color: Colors.red.shade600,
+                    size: 20,
+                  ),
+                ),
+                title: const Text('No dio'),
+                subtitle: const Text('Registrar que no pagó'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  onBeforeAction?.call();
+                  await SkippedBottomSheet.show(
+                    context,
+                    todayClient,
+                    provider: provider,
+                    onAfterAction: onAfterAction,
+                  );
+                },
+              ),
+
+              ListTile(
+                leading: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: Colors.purple.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.currency_exchange_outlined,
+                    color: Colors.purple.shade600,
+                    size: 20,
+                  ),
+                ),
+                title: const Text('Refinanciar'),
+                subtitle: const Text('Dar dinero o más tiempo'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await RefinanceBottomSheet.show(
+                    context,
+                    todayClient,
+                    provider: provider,
+                  );
+                },
+              ),
+
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -125,6 +273,10 @@ class TodayClientTile extends StatelessWidget {
                     const SizedBox(height: 4),
                     _buildRescheduledBadge(context),
                   ],
+                  if (todayClient.isRefinanced) ...[
+                    const SizedBox(height: 4),
+                    _buildRefinancedBadge(context),
+                  ],
                 ],
               ),
             ),
@@ -161,6 +313,41 @@ class TodayClientTile extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               color: Colors.amber.shade800,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRefinancedBadge(BuildContext context) {
+    final refinance = todayClient.refinance!;
+    final typeLabel = refinance.type == RefinanceType.money
+        ? 'Refinanciado · ${Formatters.formatAmount(refinance.amount)}'
+        : 'Refinanciado · Más tiempo';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.purple.shade50,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.purple.shade200),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.currency_exchange_outlined,
+            size: 12,
+            color: Colors.purple.shade600,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            typeLabel,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.purple.shade700,
               fontWeight: FontWeight.w500,
             ),
           ),

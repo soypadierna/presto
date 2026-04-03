@@ -1,5 +1,5 @@
 import 'package:intl/intl.dart';
-
+import 'package:presto/features/today/domain/refinance_model.dart';
 import '../../today/domain/today_client.dart';
 import '../../today/domain/payment_model.dart';
 import '../domain/expense_model.dart';
@@ -11,70 +11,102 @@ import '../domain/day_summary.dart';
 /// El formato es compatible con WhatsApp y cualquier app de mensajería.
 class ReportGenerator {
   /// Genera el informe desde los datos en tiempo real del día actual.
-  static String generate({
-    required String routeName,
-    required DateTime date,
-    required List<TodayClient> todayClients,
-    required List<ExpenseModel> expenses,
-    required DailyBaseModel? dailyBase,
-  }) {
-    final buffer = StringBuffer();
-    final dateStr = DateFormat("EEEE d 'de' MMMM, yyyy", 'es').format(date);
+static String generate({
+  required String routeName,
+  required DateTime date,
+  required List<TodayClient> todayClients,
+  required List<ExpenseModel> expenses,
+  required DailyBaseModel? dailyBase,
+  List<RefinanceModel> refinances = const [],
+}) {
+  final buffer = StringBuffer();
+  final dateStr = DateFormat("EEEE d 'de' MMMM, yyyy", 'es').format(date);
 
-    final totalCollected = todayClients
-        .where((tc) => tc.isPaid)
-        .fold<double>(0, (sum, tc) => sum + (tc.payment?.amount ?? 0));
-    final totalExpenses =
-        expenses.fold<double>(0, (sum, e) => sum + e.amount);
-    final baseAmount = dailyBase?.amount ?? 0;
-    final netTotal = baseAmount + totalCollected - totalExpenses;
+  final totalCollected = todayClients
+      .where((tc) => tc.isPaid)
+      .fold<double>(0, (sum, tc) => sum + (tc.payment?.amount ?? 0));
 
-    buffer.writeln('PRESTO — Informe del día');
-    buffer.writeln(_capitalize(dateStr));
-    buffer.writeln('Ruta: $routeName');
-    buffer.writeln();
-    buffer.writeln('BASE: ${_formatAmount(baseAmount)}');
-    buffer.writeln();
-    buffer.writeln('COBROS:');
+  final totalExpenses =
+      expenses.fold<double>(0, (sum, e) => sum + e.amount);
 
-    final registered = todayClients
-        .where((tc) => tc.isPaid || tc.isSkipped)
-        .toList();
+  final totalRefinanced = refinances
+      .fold<double>(0, (sum, r) => sum + r.amount);
 
-    if (registered.isEmpty) {
-      buffer.writeln('  (Sin registros)');
-    } else {
-      for (int i = 0; i < registered.length; i++) {
-        final tc = registered[i];
-        final value = tc.isPaid
-            ? _formatAmount(tc.payment!.amount)
-            : 'No dio';
-        buffer.writeln(_formatLine('${i + 1}.', tc.client.name, value));
-      }
+  final baseAmount = dailyBase?.amount ?? 0;
+  final netTotal =
+      baseAmount + totalCollected - totalExpenses - totalRefinanced;
+
+  buffer.writeln('PRESTO — Informe del día');
+  buffer.writeln(_capitalize(dateStr));
+  buffer.writeln('Ruta: $routeName');
+  buffer.writeln();
+  buffer.writeln('BASE: ${_formatAmount(baseAmount)}');
+  buffer.writeln();
+  buffer.writeln('COBROS:');
+
+  final registered = todayClients
+      .where((tc) => tc.isPaid || tc.isSkipped)
+      .toList();
+
+  if (registered.isEmpty) {
+    buffer.writeln('  (Sin registros)');
+  } else {
+    for (int i = 0; i < registered.length; i++) {
+      final tc = registered[i];
+      final value = tc.isPaid
+          ? _formatAmount(tc.payment!.amount)
+          : 'No dio';
+      buffer.writeln(_formatLine('${i + 1}.', tc.client.name, value));
     }
-
-    buffer.writeln();
-    buffer.writeln('TOTAL COBRADO: ${_formatAmount(totalCollected)}');
-
-    if (expenses.isNotEmpty) {
-      buffer.writeln();
-      buffer.writeln('GASTOS:');
-      for (final expense in expenses) {
-        buffer.writeln(
-          _formatLine('-', expense.description, _formatAmount(expense.amount)),
-        );
-      }
-      buffer.writeln();
-      buffer.writeln('TOTAL GASTOS: ${_formatAmount(totalExpenses)}');
-    }
-
-    buffer.writeln();
-    buffer.writeln('─' * 32);
-    buffer.writeln('NETO: ${_formatAmount(netTotal)}');
-
-    return buffer.toString();
   }
 
+  buffer.writeln();
+  buffer.writeln('TOTAL COBRADO: ${_formatAmount(totalCollected)}');
+
+  // Sección refinanciamientos
+  if (refinances.isNotEmpty) {
+    buffer.writeln();
+    buffer.writeln('REFINANCIAMIENTOS:');
+    for (final r in refinances) {
+      final client = todayClients
+          .where((tc) => tc.client.id == r.clientId)
+          .firstOrNull;
+      final clientName = client?.client.name ?? 'Cliente';
+      final typeLabel = r.type == RefinanceType.money
+          ? 'Dar dinero'
+          : 'Dar tiempo';
+      final value = r.amount > 0
+          ? _formatAmount(r.amount)
+          : 'Sin monto';
+      buffer.writeln(
+        _formatLine('- $clientName ($typeLabel)', '', value),
+      );
+    }
+    buffer.writeln();
+    buffer.writeln(
+      'TOTAL REFINANCIADO: ${_formatAmount(totalRefinanced)}',
+    );
+  }
+
+  if (expenses.isNotEmpty) {
+    buffer.writeln();
+    buffer.writeln('GASTOS:');
+    for (final expense in expenses) {
+      buffer.writeln(
+        _formatLine(
+            '-', expense.description, _formatAmount(expense.amount)),
+      );
+    }
+    buffer.writeln();
+    buffer.writeln('TOTAL GASTOS: ${_formatAmount(totalExpenses)}');
+  }
+
+  buffer.writeln();
+  buffer.writeln('─' * 32);
+  buffer.writeln('NETO: ${_formatAmount(netTotal)}');
+
+  return buffer.toString();
+}
   /// Genera el informe desde un [DaySummary] del historial.
   static String generateFromSummary({
     required String routeName,

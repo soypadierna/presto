@@ -20,7 +20,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -102,6 +102,24 @@ class DatabaseHelper {
         FOREIGN KEY (route_id) REFERENCES routes(id)
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE refinances (
+        id TEXT PRIMARY KEY,
+        client_id TEXT NOT NULL,
+        route_id TEXT NOT NULL,
+        amount REAL NOT NULL DEFAULT 0,
+        method TEXT NOT NULL DEFAULT 'cash',
+        type TEXT NOT NULL,
+        image_path TEXT,
+        new_payment_date TEXT,
+        note TEXT,
+        refinance_date TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (client_id) REFERENCES clients(id),
+        FOREIGN KEY (route_id) REFERENCES routes(id)
+      )
+    ''');
   }
 
   Future<void> _onUpgrade(
@@ -110,15 +128,13 @@ class DatabaseHelper {
     int newVersion,
   ) async {
     if (oldVersion < 2) {
-      await db.execute('''
-        ALTER TABLE payments
-        ADD COLUMN payment_method TEXT NOT NULL DEFAULT 'cash'
-      ''');
-      await db.execute('''
-        ALTER TABLE payments
-        ADD COLUMN image_path TEXT
-      ''');
-      debugPrint('DB migrada de v$oldVersion a v2');
+      await db.execute(
+        'ALTER TABLE payments ADD COLUMN payment_method TEXT NOT NULL DEFAULT \'cash\'',
+      );
+      await db.execute(
+        'ALTER TABLE payments ADD COLUMN image_path TEXT',
+      );
+      debugPrint('DB migrada a v2');
     }
 
     if (oldVersion < 3) {
@@ -134,7 +150,28 @@ class DatabaseHelper {
           FOREIGN KEY (route_id) REFERENCES routes(id)
         )
       ''');
-      debugPrint('DB migrada a v3 — tabla scheduled_payments creada');
+      debugPrint('DB migrada a v3');
+    }
+
+    if (oldVersion < 4) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS refinances (
+          id TEXT PRIMARY KEY,
+          client_id TEXT NOT NULL,
+          route_id TEXT NOT NULL,
+          amount REAL NOT NULL DEFAULT 0,
+          method TEXT NOT NULL DEFAULT 'cash',
+          type TEXT NOT NULL,
+          image_path TEXT,
+          new_payment_date TEXT,
+          note TEXT,
+          refinance_date TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          FOREIGN KEY (client_id) REFERENCES clients(id),
+          FOREIGN KEY (route_id) REFERENCES routes(id)
+        )
+      ''');
+      debugPrint('DB migrada a v4 — tabla refinances creada');
     }
   }
 

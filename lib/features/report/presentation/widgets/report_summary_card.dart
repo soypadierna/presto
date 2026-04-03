@@ -16,7 +16,8 @@ class ReportSummaryCard extends StatelessWidget {
         final base = reportProvider.baseAmount;
         final collected = todayProvider.totalCollected;
         final expenses = reportProvider.totalExpenses;
-        final net = base + collected - expenses;
+        final net =
+            base + collected - expenses - reportProvider.totalRefinanced;
 
         return Container(
           margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -50,6 +51,16 @@ class ReportSummaryCard extends StatelessWidget {
                 amount: collected,
                 color: Colors.green.shade700,
               ),
+              if (reportProvider.totalRefinanced > 0) ...[
+                const SizedBox(height: 10),
+                _buildRow(
+                  context: context,
+                  label: 'Refinanciamientos',
+                  amount: reportProvider.totalRefinanced,
+                  color: Colors.purple.shade600,
+                  isNegative: true,
+                ),
+              ],
               const SizedBox(height: 10),
               _buildRow(
                 context: context,

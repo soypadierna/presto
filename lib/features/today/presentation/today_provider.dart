@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:presto/features/report/domain/daily_base_model.dart';
+import 'package:presto/features/today/domain/refinance_model.dart';
 import 'package:uuid/uuid.dart';
 import '../data/payment_repository.dart';
 import '../data/scheduled_payment_repository.dart';
@@ -7,12 +9,16 @@ import '../domain/payment_model.dart';
 import '../domain/scheduled_payment_model.dart';
 import '../../clients/data/client_repository.dart';
 import '../../clients/domain/client_model.dart';
+import '../data/refinance_repository.dart';
+import '../../report/data/daily_base_repository.dart';
 
 class TodayProvider extends ChangeNotifier {
   final ClientRepository _clientRepository = ClientRepository();
   final PaymentRepository _paymentRepository = PaymentRepository();
   final ScheduledPaymentRepository _scheduledRepository =
       ScheduledPaymentRepository();
+  final RefinanceRepository _refinanceRepository = RefinanceRepository();
+  final DailyBaseRepository _baseRepository = DailyBaseRepository();
 
   List<TodayClient> _todayClients = [];
   bool _isLoading = false;
@@ -25,6 +31,13 @@ class TodayProvider extends ChangeNotifier {
   String get currentRouteId => _currentRouteId;
   DateTime get selectedDate => _selectedDate;
   String? get errorMessage => _errorMessage;
+
+  /// Cantidad de clientes refinanciados hoy
+  int get refinancedCount =>
+      _todayClients.where((tc) => tc.isRefinanced).length;
+
+  /// Expone el formateo de fecha para uso externo
+  String formatDatePublic(DateTime date) => _formatDate(date);
 
   double get totalCollected => _todayClients
       .where((tc) => tc.isPaid)
@@ -309,5 +322,69 @@ class TodayProvider extends ChangeNotifier {
     return '${date.year}-'
         '${date.month.toString().padLeft(2, '0')}-'
         '${date.day.toString().padLeft(2, '0')}';
+  }
+
+  /// Registra un refinanciamiento para un cliente.
+  /// Si hay monto > 0 lo descuenta de la base del día.
+  /// Si es "Dar tiempo" actualiza los días de pago del cliente.
+  Future<void> refinanceClient(
+    TodayClient todayClient,
+    RefinanceModel refinance, {
+    Map<String, dynamic>? newPaymentDays,
+  }) async {
+    try {
+      // 1. Guardar el refinanciamiento
+      await _refinanceRepository.insertRefinance(refinance);
+
+      // 2. Si hay monto descontarlo de la base del día
+      if (refinance.amount > 0) {
+        final dateStr = _formatDate(_selectedDate);
+        final existingBase = await _baseRepository.getBaseByDate(
+          _currentRouteId,
+          dateStr,
+        );
+
+        if (existingBase != null) {
+          // Descontar del monto actual
+          await _baseRepository.updateBase(
+            existingBase.copyWith(
+              amount: existingBase.amount - refinance.amount,
+            ),
+          );
+        } else {
+          // Crear base con monto negativo
+          await _baseRepository.insertBase(
+            DailyBaseModel(
+              id: const Uuid().v4(),
+              routeId: _currentRouteId,
+              amount: -refinance.amount,
+              baseDate: dateStr,
+              createdAt: DateTime.now().toIso8601String(),
+            ),
+          );
+        }
+      }
+
+      // 3. Si es "Dar tiempo" actualizar días de pago del cliente
+      if (newPaymentDays != null) {
+        await _clientRepository.updateClient(
+          todayClient.client.copyWith(paymentDays: newPaymentDays),
+        );
+      }
+
+      // 4. Actualizar en memoria
+      _todayClients = _todayClients.map((tc) {
+        if (tc.client.id == todayClient.client.id) {
+          return tc.copyWith(refinance: refinance);
+        }
+        return tc;
+      }).toList();
+
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'No se pudo registrar el refinanciamiento';
+      notifyListeners();
+      debugPrint('Error refinanciando cliente: $e');
+    }
   }
 }
