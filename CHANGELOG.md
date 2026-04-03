@@ -5,6 +5,21 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [2.5.0] - 2026-03-23
+
+### Agregado
+- Refinanciamiento de clientes desde TodayScreen e historial
+- Dos tipos: "Dar dinero" y "Dar tiempo"
+- Dar dinero descuenta el monto de la base del día
+- Dar tiempo actualiza los días de pago del cliente
+- Soporte de imagen de comprobante para refinanciamientos por transferencia
+- Menú contextual con long press en clientes pendientes
+- Badge morado en tile de cliente refinanciado
+- Sección "REFINANCIAMIENTOS" en el informe del día
+- Migración de DB a versión 4 con tabla refinances
+
+---
+
 ## [2.4.0] - 2026-03-23
 
 ### Agregado
