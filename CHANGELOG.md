@@ -5,6 +5,21 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [2.6.1] - 2026-03-25
+
+### Mejorado
+- Tiles rediseñados — fondo neutro en todos los estados
+- Color concentrado solo en el círculo de estado y el monto/etiqueta derecha
+- Pendiente: círculo gris con número de orden
+- Pagado: círculo verde oscuro con checkmark, monto en verde
+- No dio: círculo rojo oscuro con X, etiqueta "No dio" en rojo
+- Refinanciado: círculo ámbar oscuro con ícono, etiqueta en ámbar
+- Reagendado: igual que pendiente + badge morado con fecha
+- Badge SINPE en transferencias con fondo verde oscuro
+- Modo claro inferido con mismos principios y paleta invertida
+
+---
+
 ## [2.6.0] - 2026-03-25
 
 ### Mejorado
