@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/utils/formatters.dart';
 
-/// Widget de navegación entre fechas con flechas y selector.
 class DateNavigator extends StatelessWidget {
   final DateTime selectedDate;
   final ValueChanged<DateTime> onDateChanged;
@@ -16,107 +15,92 @@ class DateNavigator extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isToday = _isToday(selectedDate);
+    final isDark = theme.brightness == Brightness.dark;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Flecha anterior
-        _buildArrowButton(
-          context: context,
-          icon: Icons.chevron_left,
-          onTap: () => onDateChanged(
-            selectedDate.subtract(const Duration(days: 1)),
-          ),
-        ),
+    // Color del contenedor — más oscuro que el fondo en dark, más claro en light
+    final containerColor = isDark
+        ? const Color(0xFF2C2C2C)
+        : const Color(0xFFE6E6E6);
 
-        // Fecha central — abre DatePicker al tocar
-        GestureDetector(
-          onTap: () => _showDatePicker(context),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            transitionBuilder: (child, animation) => FadeTransition(
-              opacity: animation,
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0, 0.3),
-                  end: Offset.zero,
-                ).animate(animation),
-                child: child,
-              ),
+    return Container(
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Flecha izquierda — mismo color que contenedor
+          _buildArrow(
+            context,
+            Icons.chevron_left,
+            containerColor,
+            () => onDateChanged(
+              selectedDate.subtract(const Duration(days: 1)),
             ),
-            child: Container(
-              key: ValueKey(selectedDate.toIso8601String()),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 6,
-              ),
-              decoration: BoxDecoration(
-                color: isToday
-                    ? colorScheme.primary.withValues(alpha: 0.1)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _formatDateLabel(selectedDate),
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: isToday
-                          ? colorScheme.primary
-                          : colorScheme.onSurface,
-                    ),
+          ),
+
+          // Fecha central
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _showDatePicker(context),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: child,
+                ),
+                child: Text(
+                  key: ValueKey(selectedDate.toIso8601String()),
+                  _formatLabel(selectedDate),
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onSurface,
                   ),
-                  // Punto indicador para hoy
-                  if (isToday) ...[
-                    const SizedBox(height: 2),
-                    Container(
-                      width: 4,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ],
-                ],
+                ),
               ),
             ),
           ),
-        ),
 
-        // Flecha siguiente
-        _buildArrowButton(
-          context: context,
-          icon: Icons.chevron_right,
-          onTap: () => onDateChanged(
-            selectedDate.add(const Duration(days: 1)),
+          // Flecha derecha — mismo color que contenedor
+          _buildArrow(
+            context,
+            Icons.chevron_right,
+            containerColor,
+            () => onDateChanged(
+              selectedDate.add(const Duration(days: 1)),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildArrowButton({
-    required BuildContext context,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
+  Widget _buildArrow(
+    BuildContext context,
+    IconData icon,
+    Color containerColor,
+    VoidCallback onTap,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
-    return IconButton(
-      onPressed: onTap,
-      icon: Icon(icon),
-      iconSize: 22,
-      color: colorScheme.onSurface.withValues(alpha: 0.7),
-      padding: const EdgeInsets.all(4),
-      constraints: const BoxConstraints(
-        minWidth: 32,
-        minHeight: 32,
-      ),
-      style: IconButton.styleFrom(
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          // Mismo color que el contenedor — se funde visualmente
+          color: containerColor,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          icon,
+          size: 20,
+          color: colorScheme.onSurface.withValues(alpha: 0.6),
+        ),
       ),
     );
   }
@@ -129,14 +113,10 @@ class DateNavigator extends StatelessWidget {
       lastDate: DateTime.now().add(const Duration(days: 365)),
       helpText: 'Selecciona el día',
     );
-
-    if (picked != null) {
-      onDateChanged(picked);
-    }
+    if (picked != null) onDateChanged(picked);
   }
 
-  /// Formatea la fecha con etiquetas especiales para hoy, ayer y mañana.
-  String _formatDateLabel(DateTime date) {
+  String _formatLabel(DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final target = DateTime(date.year, date.month, date.day);
@@ -144,21 +124,26 @@ class DateNavigator extends StatelessWidget {
 
     switch (diff) {
       case 0:
-        return 'Hoy';
+        return 'Hoy · ${Formatters.formatShortDateNavigator(date)}';
       case -1:
-        return 'Ayer';
+        return 'Ayer · ${Formatters.formatShortDateNavigator(date)}';
       case 1:
-        return 'Mañana';
+        return 'Mañana · ${Formatters.formatShortDateNavigator(date)}';
       default:
-        // Formato corto: "Lun 25 Mar"
-        return Formatters.formatShortDateNavigator(date);
+        return _formatFull(date);
     }
   }
 
-  bool _isToday(DateTime date) {
-    final now = DateTime.now();
-    return date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
+  String _formatFull(DateTime date) {
+    const days = [
+      'Lunes', 'Martes', 'Miércoles',
+      'Jueves', 'Viernes', 'Sábado', 'Domingo'
+    ];
+    const months = [
+      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+    ];
+    return '${days[date.weekday - 1]} ${date.day} de '
+        '${months[date.month - 1]}, ${date.year}';
   }
 }

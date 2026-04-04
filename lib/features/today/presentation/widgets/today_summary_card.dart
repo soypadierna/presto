@@ -13,6 +13,10 @@ class TodaySummaryCard extends StatelessWidget {
 
     return Consumer<TodayProvider>(
       builder: (context, provider, _) {
+        final total = provider.todayClients.length;
+        final done = provider.paidCount + provider.skippedCount;
+        final progress = total > 0 ? done / total : 0.0;
+
         return Container(
           margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           padding: const EdgeInsets.all(18),
@@ -57,7 +61,9 @@ class TodaySummaryCard extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
+              _buildProgress(context, provider, progress, done, total),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   // Verde funcional — estado de pago exitoso
@@ -86,6 +92,27 @@ class TodaySummaryCard extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildProgress(
+    BuildContext context,
+    TodayProvider provider,
+    double progress,
+    int done,
+    int total,
+  ) {
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: LinearProgressIndicator(
+        value: progress,
+        minHeight: 4,
+        backgroundColor: Colors.grey[600],
+        valueColor: AlwaysStoppedAnimation<Color>(
+          const Color(0xFF639922),
+        ),
+      ),
     );
   }
 
