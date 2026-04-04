@@ -158,6 +158,7 @@ class _TodayScreenState extends State<TodayScreen>
                                   child: TodayClientTile(
                                     key: ValueKey(filtered[index].client.id),
                                     todayClient: filtered[index],
+                                    orderIndex: index, // ← agregar
                                     onBeforeAction: _saveScrollPosition,
                                     onAfterAction: _restoreScrollPosition,
                                   ),
