@@ -490,7 +490,6 @@ class _RefinanceBottomSheetState extends State<RefinanceBottomSheet> {
   }
 
   Widget _buildBiweeklySelector() {
-    final theme = Theme.of(context);
     final dates = List<int>.from(
       _newPaymentDays['dates'] as List? ?? [1, 15],
     );
@@ -500,7 +499,7 @@ class _RefinanceBottomSheetState extends State<RefinanceBottomSheet> {
       children: [
         Expanded(
           child: DropdownButtonFormField<int>(
-            value: dates[0],
+            initialValue: dates[0],
             decoration: InputDecoration(
               labelText: 'Primera fecha',
               border: OutlineInputBorder(
@@ -560,7 +559,7 @@ class _RefinanceBottomSheetState extends State<RefinanceBottomSheet> {
     final dayOptions = List.generate(31, (i) => i + 1);
 
     return DropdownButtonFormField<int>(
-      value: selectedDate,
+      initialValue: selectedDate,
       decoration: InputDecoration(
         labelText: 'Nuevo día del mes',
         border: OutlineInputBorder(

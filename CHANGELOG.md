@@ -5,6 +5,18 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [2.6.0] - 2026-03-25
+
+### Mejorado
+- Navegador de fecha rediseñado con contenedor y botones del mismo color
+- Orden del header: navegador → summary card → filtros → búsqueda
+- `TodaySummaryCard` integrada dentro de `TodayHeader`
+- Filtros compactos con punto de color para "Pagaron" y "No dieron"
+- Campo de búsqueda con fondo relleno sin borde
+- `TodayScreen` simplificado — delega todo el header a `TodayHeader`
+
+---
+
 ## [2.5.0] - 2026-03-23
 
 ### Agregado
