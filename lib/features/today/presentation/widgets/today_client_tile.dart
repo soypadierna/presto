@@ -114,33 +114,36 @@ class TodayClientTile extends StatelessWidget {
 
     if (todayClient.isPaid) {
       return _circle(
-        bg: isDark ? const Color(0xFF1A2E10) : const Color(0xFFEAF3DE),
-        child: _svgCheck(
-            isDark ? const Color(0xFF6AAF38) : const Color(0xFF3B6D11)),
+        bg: isDark
+            ? const Color(0xFF1A2E10) // dark — verde muy oscuro
+            : const Color(0xFF3B6D11), // light — c-green 600
+        child: _svgCheck(Colors.white),
       );
     }
 
     if (todayClient.isSkipped) {
       return _circle(
-        bg: isDark ? const Color(0xFF2E1212) : const Color(0xFFFCEBEB),
-        child:
-            _svgX(isDark ? const Color(0xFFC04848) : const Color(0xFFA32D2D)),
+        bg: isDark
+            ? const Color(0xFF2E1212) // dark — rojo muy oscuro
+            : const Color(0xFFA32D2D), // light — c-red 600
+        child: _svgX(Colors.white),
       );
     }
 
     if (todayClient.isRefinanced) {
       return _circle(
-        bg: isDark ? const Color(0xFF2A1E08) : const Color(0xFFFAEEDA),
-        child: _svgRefresh(
-            isDark ? const Color(0xFFC08018) : const Color(0xFF854F0B)),
+        bg: isDark
+            ? const Color(0xFF2A1E08) // dark — ámbar muy oscuro
+            : const Color(0xFF854F0B), // light — c-amber 600
+        child: _svgRefresh(Colors.white),
       );
     }
 
-// Pendiente y reagendado — número de orden
+    // Pendiente y reagendado — número de orden
     return _circle(
       bg: isDark
           ? const Color(0xFF444441) // c-gray 700
-          : const Color(0xFFD3D1C7), // c-gray 100
+          : const Color(0xFFE8E6DF),
       child: Text(
         '${_orderNumber()}',
         style: TextStyle(
@@ -215,8 +218,43 @@ class TodayClientTile extends StatelessWidget {
   Widget _buildCenter(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final nameColor = _nameColor(isDark);
-    final subColor = isDark ? const Color(0xFF606058) : const Color(0xFF8A8A80);
+    // Color del nombre según estado y modo
+    final Color nameColor;
+    if (todayClient.isPending) {
+      nameColor = isDark ? const Color(0xFFEEEEE8) : const Color(0xFF1A1A16);
+    } else if (todayClient.isPaid) {
+      nameColor = isDark
+          ? const Color(0xFF9A9A92) // atenuado en oscuro
+          : const Color(0xFF173404); // c-green 900 en claro
+    } else if (todayClient.isSkipped) {
+      nameColor = isDark
+          ? const Color(0xFF9A9A92) // atenuado en oscuro
+          : const Color(0xFF501313); // c-red 900 en claro
+    } else if (todayClient.isRefinanced) {
+      nameColor = isDark
+          ? const Color(0xFF9A9A92) // atenuado en oscuro
+          : const Color(0xFF412402); // c-amber 900 en claro
+    } else {
+      nameColor = isDark ? const Color(0xFFEEEEE8) : const Color(0xFF1A1A16);
+    }
+
+    // Color del subtexto según estado y modo
+    final Color subColor;
+    if (todayClient.isPaid) {
+      subColor = isDark
+          ? const Color(0xFF606058)
+          : const Color(0xFF27500A); // c-green 800
+    } else if (todayClient.isSkipped) {
+      subColor = isDark
+          ? const Color(0xFF606058)
+          : const Color(0xFF791F1F); // c-red 800
+    } else if (todayClient.isRefinanced) {
+      subColor = isDark
+          ? const Color(0xFF606058)
+          : const Color(0xFF633806); // c-amber 800
+    } else {
+      subColor = isDark ? const Color(0xFF606058) : const Color(0xFF8A8A80);
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,14 +298,6 @@ class TodayClientTile extends StatelessWidget {
     );
   }
 
-  Color _nameColor(bool isDark) {
-    if (todayClient.isPending) {
-      return isDark ? const Color(0xFFEEEEE8) : const Color(0xFF1A1A16);
-    }
-    // Pagado, no dio, refinanciado — atenuado
-    return isDark ? const Color(0xFF9A9A92) : const Color(0xFF6A6A62);
-  }
-
   String _subtextLeft() {
     if (todayClient.isPaid) {
       final method =
@@ -297,10 +327,14 @@ class TodayClientTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A2E10) : const Color(0xFFEAF3DE),
+        color: isDark
+            ? const Color(0xFF1A2E10)
+            : const Color(0xFF3B6D11), // c-green 600
         borderRadius: BorderRadius.circular(5),
         border: Border.all(
-          color: isDark ? const Color(0xFF2A4818) : const Color(0xFF97C459),
+          color: isDark
+              ? const Color(0xFF2A4818)
+              : const Color(0xFF27500A), // c-green 800
           width: 0.5,
         ),
       ),
@@ -309,7 +343,7 @@ class TodayClientTile extends StatelessWidget {
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w500,
-          color: isDark ? const Color(0xFF6AAF38) : const Color(0xFF3B6D11),
+          color: Colors.white,
         ),
       ),
     );
@@ -322,10 +356,14 @@ class TodayClientTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF181428) : const Color(0xFFF0EEFF),
+        color: isDark
+            ? const Color(0xFF181428)
+            : const Color(0xFFEEEDFE), // c-purple 50
         borderRadius: BorderRadius.circular(5),
         border: Border.all(
-          color: isDark ? const Color(0xFF2E2858) : const Color(0xFFAFA9EC),
+          color: isDark
+              ? const Color(0xFF2E2858)
+              : const Color(0xFFAFA9EC), // c-purple 200
           width: 0.5,
         ),
       ),
@@ -334,7 +372,9 @@ class TodayClientTile extends StatelessWidget {
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w500,
-          color: isDark ? const Color(0xFFA898E8) : const Color(0xFF534AB7),
+          color: isDark
+              ? const Color(0xFFA898E8)
+              : const Color(0xFF3C3489), // c-purple 800
         ),
       ),
     );
@@ -351,7 +391,9 @@ class TodayClientTile extends StatelessWidget {
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w500,
-          color: isDark ? const Color(0xFF6AAF38) : const Color(0xFF3B6D11),
+          color: isDark
+              ? const Color(0xFF6AAF38) // verde claro en oscuro
+              : const Color(0xFF173404), // c-green 900 en claro
         ),
       );
     }
@@ -362,7 +404,9 @@ class TodayClientTile extends StatelessWidget {
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w500,
-          color: isDark ? const Color(0xFFC04848) : const Color(0xFFA32D2D),
+          color: isDark
+              ? const Color(0xFFC04848) // rojo claro en oscuro
+              : const Color(0xFF501313), // c-red 900 en claro
         ),
       );
     }
@@ -373,7 +417,9 @@ class TodayClientTile extends StatelessWidget {
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w500,
-          color: isDark ? const Color(0xFFC08018) : const Color(0xFF854F0B),
+          color: isDark
+              ? const Color(0xFFC08018) // ámbar claro en oscuro
+              : const Color(0xFF412402), // c-amber 900 en claro
         ),
       );
     }
@@ -620,23 +666,21 @@ class TodayClientTile extends StatelessWidget {
     if (todayClient.isPaid) {
       return isDark
           ? const Color(0xFF173404) // c-green 900
-          : const Color(0xFFEAF3DE); // c-green 50
+          : const Color(0xFF97C459); // c-green 200
     }
     if (todayClient.isSkipped) {
       return isDark
           ? const Color(0xFF501313) // c-red 900
-          : const Color(0xFFFCEBEB); // c-red 50
+          : const Color(0xFFF09595); // c-red 200
     }
     if (todayClient.isRefinanced) {
       return isDark
           ? const Color(0xFF412402) // c-amber 900
-          : const Color(0xFFFAEEDA); // c-amber 50
+          : const Color(0xFFEF9F27); // c-amber 200
     }
 
     // Pendiente y reagendado
-    return isDark
-        ? const Color(0xFF2C2C2A) // c-gray 900
-        : const Color(0xFFF1EFE8); // c-gray 50
+    return isDark ? const Color(0xFF2C2C2A) : const Color(0xFFFFFFFF);
   }
 
   Color _tileBorder(BuildContext context) {
@@ -645,22 +689,22 @@ class TodayClientTile extends StatelessWidget {
     if (todayClient.isPaid) {
       return isDark
           ? const Color(0xFF3B6D11) // c-green 600
-          : const Color(0xFFC0DD97); // c-green 100
+          : const Color(0xFF639922); // c-green 400
     }
     if (todayClient.isSkipped) {
       return isDark
           ? const Color(0xFFA32D2D) // c-red 600
-          : const Color(0xFFF7C1C1); // c-red 100
+          : const Color(0xFFE24B4A); // c-red 400
     }
     if (todayClient.isRefinanced) {
       return isDark
           ? const Color(0xFF854F0B) // c-amber 600
-          : const Color(0xFFFAC775); // c-amber 100
+          : const Color(0xFFBA7517); // c-amber 400
     }
 
     // Pendiente y reagendado
     return isDark
-        ? const Color(0xFF444441) // c-gray 700
+        ? const Color(0xFF444441)
         : const Color(0xFFD3D1C7); // c-gray 100
   }
 }
