@@ -28,13 +28,46 @@ class TodayClientTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.read<TodayProvider>();
 
-    if (!todayClient.isPending) {
+    // Skipped — solo long press para deshacer
+    if (todayClient.isSkipped) {
       return GestureDetector(
         onLongPress: () => _showUndoConfirmation(context, provider),
         child: _buildTile(context),
       );
     }
 
+    // Pagado — swipe derecho para agregar otro pago, long press para menú
+    if (todayClient.isPaid) {
+      return Dismissible(
+        key: Key(
+            'today_paid_${todayClient.client.id}_${todayClient.payments.length}'),
+        direction: DismissDirection.startToEnd,
+        confirmDismiss: (direction) async {
+          onBeforeAction?.call();
+          if (context.mounted) {
+            await PaymentBottomSheet.show(
+              context,
+              todayClient,
+              provider: provider,
+              onAfterAction: onAfterAction,
+            );
+          }
+          return false;
+        },
+        background: _buildSwipeBg(
+          color: const Color(0xFF3B6D11),
+          icon: Icons.add_circle_outline,
+          label: 'Agregar',
+          alignment: Alignment.centerLeft,
+        ),
+        child: GestureDetector(
+          onLongPress: () => _showContextMenu(context, provider),
+          child: _buildTile(context),
+        ),
+      );
+    }
+
+    // Pendiente — swipe izquierda/derecha + long press
     return Dismissible(
       key: Key('today_${todayClient.client.id}'),
       confirmDismiss: (direction) async {
@@ -79,7 +112,6 @@ class TodayClientTile extends StatelessWidget {
       ),
     );
   }
-
   // ── Tile principal ───────────────────────────────────────
 
   Widget _buildTile(BuildContext context) {
