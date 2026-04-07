@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -20,7 +20,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -89,11 +89,26 @@ class DatabaseHelper {
         FOREIGN KEY (route_id) REFERENCES routes(id)
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE scheduled_payments (
+        id TEXT PRIMARY KEY,
+        client_id TEXT NOT NULL,
+        route_id TEXT NOT NULL,
+        scheduled_date TEXT NOT NULL,
+        note TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (client_id) REFERENCES clients(id),
+        FOREIGN KEY (route_id) REFERENCES routes(id)
+      )
+    ''');
   }
 
-  /// Migración de versión 1 a 2:
-  /// Agrega columnas payment_method e image_path a la tabla payments.
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+  Future<void> _onUpgrade(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
     if (oldVersion < 2) {
       await db.execute('''
         ALTER TABLE payments
@@ -103,7 +118,23 @@ class DatabaseHelper {
         ALTER TABLE payments
         ADD COLUMN image_path TEXT
       ''');
-      debugPrint('DB migrada de v$oldVersion a v$newVersion');
+      debugPrint('DB migrada de v$oldVersion a v2');
+    }
+
+    if (oldVersion < 3) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS scheduled_payments (
+          id TEXT PRIMARY KEY,
+          client_id TEXT NOT NULL,
+          route_id TEXT NOT NULL,
+          scheduled_date TEXT NOT NULL,
+          note TEXT,
+          created_at TEXT NOT NULL,
+          FOREIGN KEY (client_id) REFERENCES clients(id),
+          FOREIGN KEY (route_id) REFERENCES routes(id)
+        )
+      ''');
+      debugPrint('DB migrada a v3 — tabla scheduled_payments creada');
     }
   }
 

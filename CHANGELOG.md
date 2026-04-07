@@ -5,6 +5,32 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [2.4.0] - 2026-03-23
+
+### Agregado
+- Navegación por fechas en TodayScreen con flechas anterior/siguiente
+- Selector de fecha al tocar la fecha central
+- Etiquetas especiales: "Hoy", "Ayer", "Mañana"
+- Punto indicador bajo la fecha cuando es hoy
+- Animación suave al cambiar de fecha
+- Al cambiar fecha se resetean filtros y búsqueda automáticamente
+- Estado vacío diferenciado para hoy vs otros días
+
+---
+
+## [2.3.0] - 2026-03-23
+
+### Agregado
+- Reagendar cobro al marcar cliente como "no dio"
+- `ScheduledPaymentModel` y `ScheduledPaymentRepository`
+- `RescheduleBottomSheet` con selector de fecha y nota
+- Clientes reagendados aparecen en la lista del día con badge ámbar
+- Dos opciones en SkippedBottomSheet: "Solo registrar" y "Agendar"
+- Al pagar un cliente reagendado se elimina el reagendamiento automáticamente
+- Migración de DB a versión 3 con tabla `scheduled_payments`
+
+---
+
 ## [2.2.0] - 2026-03-23
 
 ### Agregado

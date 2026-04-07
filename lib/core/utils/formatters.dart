@@ -85,8 +85,28 @@ class Formatters {
     BuildContext context,
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return isDark
-        ? paymentTypeColorDark(type)
-        : paymentTypeColor(type);
+    return isDark ? paymentTypeColorDark(type) : paymentTypeColor(type);
+  }
+
+  /// Formato corto para el navegador: "Lun 25 Mar"
+  static String formatShortDateNavigator(DateTime date) {
+    const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    const months = [
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
+    ];
+    final dayName = days[date.weekday - 1];
+    final monthName = months[date.month - 1];
+    return '$dayName ${date.day} $monthName';
   }
 }

@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:presto/features/today/domain/today_client.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../../routes/domain/route_model.dart';
 import 'today_provider.dart';
 import 'widgets/today_client_tile.dart';
 import 'widgets/today_summary_card.dart';
-import '../../../../core/error/error_listener.dart';
+import 'widgets/date_navigator.dart';
 import 'widgets/client_picker_bottom_sheet.dart';
 import 'widgets/payment_bottom_sheet.dart';
+import '../../today/domain/today_client.dart';
+import '../../../../core/error/error_listener.dart';
 
-/// Filtros disponibles para la lista del día.
 enum TodayFilter { all, pending, paid, skipped }
 
 class TodayScreen extends StatefulWidget {
@@ -24,12 +23,11 @@ class TodayScreen extends StatefulWidget {
 
 class _TodayScreenState extends State<TodayScreen>
     with ErrorListenerMixin, AutomaticKeepAliveClientMixin {
+
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
   String _searchQuery = '';
   TodayFilter _activeFilter = TodayFilter.all;
-
-  // Mapa para recordar la posición de scroll por cliente
   final Map<String, double> _scrollPositions = {};
 
   @override
@@ -56,15 +54,9 @@ class _TodayScreenState extends State<TodayScreen>
     super.dispose();
   }
 
-  String _formatDate(DateTime date) {
-    return DateFormat("EEEE d 'de' MMMM, yyyy", 'es').format(date);
-  }
-
-  /// Filtra los clientes según el filtro activo y la búsqueda.
   List<TodayClient> _applyFilters(List<TodayClient> clients) {
     var filtered = clients;
 
-    // Aplicar filtro de estado
     switch (_activeFilter) {
       case TodayFilter.pending:
         filtered = filtered.where((tc) => tc.isPending).toList();
@@ -79,30 +71,31 @@ class _TodayScreenState extends State<TodayScreen>
         break;
     }
 
-    // Aplicar búsqueda por nombre
     if (_searchQuery.isNotEmpty) {
       filtered = filtered
-          .where((tc) =>
-              tc.client.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+          .where((tc) => tc.client.name
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase()))
           .toList();
     }
 
     return filtered;
   }
 
-  /// Guarda la posición actual del scroll antes de registrar un pago.
   void _saveScrollPosition() {
     _scrollPositions['current'] = _scrollController.offset;
   }
 
-  /// Restaura la posición del scroll después de registrar un pago.
   void _restoreScrollPosition() {
     final position = _scrollPositions['current'];
     if (position != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_scrollController.hasClients) {
           _scrollController.jumpTo(
-            position.clamp(0, _scrollController.position.maxScrollExtent),
+            position.clamp(
+              0,
+              _scrollController.position.maxScrollExtent,
+            ),
           );
         }
       });
@@ -116,21 +109,17 @@ class _TodayScreenState extends State<TodayScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(widget.route.name),
-            Consumer<TodayProvider>(
-              builder: (_, provider, __) => Text(
-                _formatDate(provider.selectedDate),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                ),
-              ),
-            ),
-          ],
+        // Nombre de la ruta a la izquierda
+        title: Text(
+          widget.route.name,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
+        // Navegador de fechas centrado
+        centerTitle: false,
         actions: [
+          // Botón agregar abono
           Consumer<TodayProvider>(
             builder: (context, provider, _) {
               return IconButton(
@@ -141,6 +130,32 @@ class _TodayScreenState extends State<TodayScreen>
             },
           ),
         ],
+        // Navegador de fechas en el bottom del AppBar
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(44),
+          child: Consumer<TodayProvider>(
+            builder: (context, provider, _) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: DateNavigator(
+                  selectedDate: provider.selectedDate,
+                  onDateChanged: (date) {
+                    provider.loadTodayClients(
+                      widget.route.id,
+                      date: date,
+                    );
+                    // Resetear filtros y búsqueda al cambiar fecha
+                    setState(() {
+                      _activeFilter = TodayFilter.all;
+                      _searchQuery = '';
+                      _searchController.clear();
+                    });
+                  },
+                ),
+              );
+            },
+          ),
+        ),
       ),
       body: Consumer<TodayProvider>(
         builder: (context, provider, _) {
@@ -190,7 +205,7 @@ class _TodayScreenState extends State<TodayScreen>
               // Lista del día
               Expanded(
                 child: provider.todayClients.isEmpty
-                    ? _buildEmptyState(context)
+                    ? _buildEmptyState(context, provider)
                     : filtered.isEmpty
                         ? _buildEmptyFilterState(context)
                         : ListView.builder(
@@ -198,9 +213,11 @@ class _TodayScreenState extends State<TodayScreen>
                             padding: const EdgeInsets.only(bottom: 24),
                             itemCount: filtered.length,
                             cacheExtent: 500,
-                            itemBuilder: (context, index) => RepaintBoundary(
+                            itemBuilder: (context, index) =>
+                                RepaintBoundary(
                               child: TodayClientTile(
-                                key: ValueKey(filtered[index].client.id),
+                                key: ValueKey(
+                                    filtered[index].client.id),
                                 todayClient: filtered[index],
                                 onBeforeAction: _saveScrollPosition,
                                 onAfterAction: _restoreScrollPosition,
@@ -280,13 +297,17 @@ class _TodayScreenState extends State<TodayScreen>
       onTap: () => setState(() => _activeFilter = filter),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 7,
+        ),
         decoration: BoxDecoration(
           color: isActive ? color : colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color:
-                isActive ? color : colorScheme.outline.withValues(alpha: 0.3),
+            color: isActive
+                ? color
+                : colorScheme.outline.withValues(alpha: 0.3),
           ),
         ),
         child: Row(
@@ -296,7 +317,8 @@ class _TodayScreenState extends State<TodayScreen>
               label,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: isActive ? Colors.white : colorScheme.onSurface,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                fontWeight:
+                    isActive ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
             const SizedBox(width: 6),
@@ -328,13 +350,50 @@ class _TodayScreenState extends State<TodayScreen>
     );
   }
 
+  Widget _buildEmptyState(
+    BuildContext context,
+    TodayProvider provider,
+  ) {
+    final theme = Theme.of(context);
+    final isToday = _isToday(provider.selectedDate);
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.event_available_outlined,
+            size: 64,
+            color: theme.colorScheme.primary.withValues(alpha: 0.3),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            isToday
+                ? 'Sin cobros para hoy'
+                : 'Sin cobros para este día',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Ningún cliente tiene cobro programado',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEmptyFilterState(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     final messages = {
       TodayFilter.pending: 'Sin clientes pendientes',
-      TodayFilter.paid: 'Ningún cliente ha pagado aún',
+      TodayFilter.paid: 'Ningún cliente ha pagado',
       TodayFilter.skipped: 'Ningún cliente marcado como "no dio"',
       TodayFilter.all: 'Sin resultados',
     };
@@ -367,7 +426,8 @@ class _TodayScreenState extends State<TodayScreen>
           if (_activeFilter != TodayFilter.all) ...[
             const SizedBox(height: 12),
             TextButton(
-              onPressed: () => setState(() => _activeFilter = TodayFilter.all),
+              onPressed: () =>
+                  setState(() => _activeFilter = TodayFilter.all),
               child: const Text('Ver todos'),
             ),
           ],
@@ -376,38 +436,6 @@ class _TodayScreenState extends State<TodayScreen>
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.event_available_outlined,
-            size: 64,
-            color: theme.colorScheme.primary.withValues(alpha: 0.3),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Sin cobros para hoy',
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Ningún cliente tiene cobro programado hoy',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Abre el selector de clientes fuera del calendario
-  /// y luego el Bottom Sheet de pago.
   Future<void> _showClientPicker(
     BuildContext context,
     TodayProvider provider,
@@ -434,9 +462,14 @@ class _TodayScreenState extends State<TodayScreen>
       context,
       tempTodayClient,
       provider: provider,
-      // NO llamar loadTodayClients aquí — el provider ya actualizó
-      // _todayClients en memoria directamente
       onAfterAction: null,
     );
+  }
+
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
   }
 }
