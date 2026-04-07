@@ -5,6 +5,15 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [2.6.2] - 2026-03-25
+
+### Corregido
+- Restaurado sistema de colores DarkModeHelper para tiles
+- Agregados colores para refinanciado y reagendado en DarkModeHelper
+- Tiles usan Colors.green/red/amber de Material que combinan con la paleta anterior
+
+---
+
 ## [2.6.1] - 2026-03-25
 
 ### Mejorado
