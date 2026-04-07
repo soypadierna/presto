@@ -208,44 +208,8 @@ class TodayClientTile extends StatelessWidget {
 
   Widget _buildCenter(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Color del nombre según estado y modo
-    final Color nameColor;
-    if (todayClient.isPending) {
-      nameColor = isDark ? const Color(0xFFEEEEE8) : const Color(0xFF1A1A16);
-    } else if (todayClient.isPaid) {
-      nameColor = isDark
-          ? const Color(0xFF9A9A92) // atenuado en oscuro
-          : const Color(0xFF173404); // c-green 900 en claro
-    } else if (todayClient.isSkipped) {
-      nameColor = isDark
-          ? const Color(0xFF9A9A92) // atenuado en oscuro
-          : const Color(0xFF501313); // c-red 900 en claro
-    } else if (todayClient.isRefinanced) {
-      nameColor = isDark
-          ? const Color(0xFF9A9A92) // atenuado en oscuro
-          : const Color(0xFF412402); // c-amber 900 en claro
-    } else {
-      nameColor = isDark ? const Color(0xFFEEEEE8) : const Color(0xFF1A1A16);
-    }
-
-    // Color del subtexto según estado y modo
-    final Color subColor;
-    if (todayClient.isPaid) {
-      subColor = isDark
-          ? const Color(0xFF606058)
-          : const Color(0xFF27500A); // c-green 800
-    } else if (todayClient.isSkipped) {
-      subColor = isDark
-          ? const Color(0xFF606058)
-          : const Color(0xFF791F1F); // c-red 800
-    } else if (todayClient.isRefinanced) {
-      subColor = isDark
-          ? const Color(0xFF606058)
-          : const Color(0xFF633806); // c-amber 800
-    } else {
-      subColor = isDark ? const Color(0xFF606058) : const Color(0xFF8A8A80);
-    }
+    final nameColor = _nameColor(isDark);
+    final subColor = isDark ? const Color(0xFF606058) : const Color(0xFF8A8A80);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -285,22 +249,89 @@ class TodayClientTile extends StatelessWidget {
             ],
           ],
         ),
+        // Badges de desglose si hay múltiples pagos
+        if (todayClient.hasMultiplePayments) ...[
+          const SizedBox(height: 5),
+          Row(
+            children: [
+              if (todayClient.cashTotal > 0)
+                _buildMethodBadge(
+                  isDark: isDark,
+                  label:
+                      'Efectivo ${Formatters.formatAmount(todayClient.cashTotal)}',
+                  isTransfer: false,
+                ),
+              if (todayClient.cashTotal > 0 && todayClient.transferTotal > 0)
+                const SizedBox(width: 5),
+              if (todayClient.transferTotal > 0)
+                _buildMethodBadge(
+                  isDark: isDark,
+                  label:
+                      'Transferencia ${Formatters.formatAmount(todayClient.transferTotal)}',
+                  isTransfer: true,
+                ),
+            ],
+          ),
+        ],
       ],
+    );
+  }
+
+  Color _nameColor(bool isDark) {
+    if (todayClient.isPending) {
+      return isDark ? const Color(0xFFEEEEE8) : const Color(0xFF1A1A16);
+    }
+    // Pagado, no dio, refinanciado — atenuado
+    return isDark ? const Color(0xFF9A9A92) : Colors.grey.shade700;
+  }
+
+  Widget _buildMethodBadge({
+    required bool isDark,
+    required String label,
+    required bool isTransfer,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: isTransfer
+            ? (isDark ? const Color(0xFF042C53) : const Color(0xFFE6F1FB))
+            : (isDark ? const Color(0xFF173404) : const Color(0xFFEAF3DE)),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isTransfer
+              ? (isDark ? const Color(0xFF185FA5) : const Color(0xFF85B7EB))
+              : (isDark ? const Color(0xFF3B6D11) : const Color(0xFF97C459)),
+          width: 0.5,
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: isTransfer
+              ? (isDark ? const Color(0xFF85B7EB) : const Color(0xFF0C447C))
+              : (isDark ? const Color(0xFF97C459) : const Color(0xFF27500A)),
+        ),
+      ),
     );
   }
 
   String _subtextLeft() {
     if (todayClient.isPaid) {
+      if (todayClient.hasMultiplePayments) {
+        return '${todayClient.payments.where((p) => p.status == PaymentStatus.paid).length} pagos';
+      }
       final method =
-          todayClient.payment?.paymentMethod == PaymentMethod.transfer
+          todayClient.lastPayment?.paymentMethod == PaymentMethod.transfer
               ? 'Transferencia'
               : 'Efectivo';
-      final time = _formatTime(todayClient.payment?.createdAt);
+      final time = _formatTime(todayClient.lastPayment?.createdAt);
       return time.isNotEmpty ? '$method · $time' : method;
     }
     if (todayClient.isSkipped) {
-      return todayClient.payment?.note?.isNotEmpty == true
-          ? todayClient.payment!.note!
+      return todayClient.skippedPayment?.note?.isNotEmpty == true
+          ? todayClient.skippedPayment!.note!
           : '${Formatters.formatAmount(todayClient.client.credit)} · ${_paymentTypeLabel()}';
     }
     if (todayClient.isRefinanced) {
@@ -311,7 +342,7 @@ class TodayClientTile extends StatelessWidget {
 
   bool _showSinpeBadge() {
     return todayClient.isPaid &&
-        todayClient.payment?.paymentMethod == PaymentMethod.transfer;
+        todayClient.lastPayment?.paymentMethod == PaymentMethod.transfer;
   }
 
   Widget _buildSinpeBadge(bool isDark) {
@@ -378,13 +409,11 @@ class TodayClientTile extends StatelessWidget {
 
     if (todayClient.isPaid) {
       return Text(
-        Formatters.formatAmount(todayClient.payment?.amount ?? 0),
+        Formatters.formatAmount(todayClient.totalPaid),
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w500,
-          color: isDark
-              ? const Color(0xFF6AAF38) // verde claro en oscuro
-              : const Color(0xFF173404), // c-green 900 en claro
+          color: isDark ? Colors.green.shade400 : Colors.green.shade700,
         ),
       );
     }
@@ -572,14 +601,22 @@ class TodayClientTile extends StatelessWidget {
                     color: const Color(0xFF1A2E10),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
-                    Icons.attach_money,
-                    color: Color(0xFF6AAF38),
+                  child: Icon(
+                    todayClient.isPaid
+                        ? Icons.add_circle_outline
+                        : Icons.attach_money,
+                    color: const Color(0xFF6AAF38),
                     size: 20,
                   ),
                 ),
-                title: const Text('Registrar pago'),
-                subtitle: const Text('El cliente pagó hoy'),
+                title: Text(
+                  todayClient.isPaid ? 'Agregar pago' : 'Registrar pago',
+                ),
+                subtitle: Text(
+                  todayClient.isPaid
+                      ? 'Registrar otro pago del cliente'
+                      : 'El cliente pagó hoy',
+                ),
                 onTap: () async {
                   Navigator.pop(ctx);
                   onBeforeAction?.call();

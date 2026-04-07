@@ -250,10 +250,8 @@ class _TodayScreenState extends State<TodayScreen>
     );
     if (selectedClient == null || !context.mounted) return;
 
-    final tempTodayClient = TodayClient(
-      client: selectedClient,
-      payment: null,
-    );
+    final tempTodayClient = TodayClient(client: selectedClient);
+    
     if (!context.mounted) return;
 
     await PaymentBottomSheet.show(

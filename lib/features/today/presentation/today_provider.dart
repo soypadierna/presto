@@ -1,16 +1,16 @@
 import 'package:flutter/foundation.dart';
-import 'package:presto/features/report/domain/daily_base_model.dart';
-import 'package:presto/features/today/domain/refinance_model.dart';
 import 'package:uuid/uuid.dart';
 import '../data/payment_repository.dart';
 import '../data/scheduled_payment_repository.dart';
+import '../data/refinance_repository.dart';
 import '../domain/today_client.dart';
 import '../domain/payment_model.dart';
 import '../domain/scheduled_payment_model.dart';
+import '../domain/refinance_model.dart';
 import '../../clients/data/client_repository.dart';
 import '../../clients/domain/client_model.dart';
-import '../data/refinance_repository.dart';
 import '../../report/data/daily_base_repository.dart';
+import '../../report/domain/daily_base_model.dart';
 
 class TodayProvider extends ChangeNotifier {
   final ClientRepository _clientRepository = ClientRepository();
@@ -32,22 +32,30 @@ class TodayProvider extends ChangeNotifier {
   DateTime get selectedDate => _selectedDate;
   String? get errorMessage => _errorMessage;
 
-  /// Cantidad de clientes refinanciados hoy
-  int get refinancedCount =>
-      _todayClients.where((tc) => tc.isRefinanced).length;
+  /// Total general cobrado
+  double get totalCollected => _todayClients.fold(
+        0,
+        (sum, tc) => sum + tc.totalPaid,
+      );
 
-  /// Expone el formateo de fecha para uso externo
-  String formatDatePublic(DateTime date) => _formatDate(date);
+  /// Total en efectivo
+  double get totalCash => _todayClients.fold(
+        0,
+        (sum, tc) => sum + tc.cashTotal,
+      );
 
-  double get totalCollected => _todayClients
-      .where((tc) => tc.isPaid)
-      .fold(0, (sum, tc) => sum + (tc.payment?.amount ?? 0));
+  /// Total en transferencia
+  double get totalTransfer => _todayClients.fold(
+        0,
+        (sum, tc) => sum + tc.transferTotal,
+      );
 
   int get paidCount => _todayClients.where((tc) => tc.isPaid).length;
   int get skippedCount => _todayClients.where((tc) => tc.isSkipped).length;
   int get pendingCount => _todayClients.where((tc) => tc.isPending).length;
+  int get refinancedCount =>
+      _todayClients.where((tc) => tc.isRefinanced).length;
 
-  /// IDs de clientes ya en la lista del día
   Set<String> get todayClientIds =>
       _todayClients.map((tc) => tc.client.id).toSet();
 
@@ -56,69 +64,82 @@ class TodayProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadTodayClients(String routeId, {DateTime? date}) async {
+  String formatDatePublic(DateTime date) => _formatDate(date);
+
+  Future<void> loadTodayClients(
+    String routeId, {
+    DateTime? date,
+  }) async {
     _currentRouteId = routeId;
     _selectedDate = date ?? DateTime.now();
     _isLoading = true;
     _errorMessage = null;
-
-    // Limpiar lista inmediatamente para no mostrar datos del día anterior
     _todayClients = [];
     notifyListeners();
 
     try {
       final dateStr = _formatDate(_selectedDate);
 
-      // 1. Clientes del calendario
       final clients = await _clientRepository.getClientsForToday(
         routeId,
         _selectedDate,
       );
 
-      // 2. Pagos del día
-      final payments = await _paymentRepository.getPaymentsByDate(
+      final allPayments = await _paymentRepository.getPaymentsByDate(
         routeId,
         dateStr,
       );
 
-      // 3. Cobros reagendados para hoy
-      final scheduled = await _scheduledRepository.getScheduledPaymentsForDate(
-          routeId, dateStr);
+      final scheduled = await _scheduledRepository
+          .getScheduledPaymentsForDate(routeId, dateStr);
 
-      // 4. Combinar clientes del calendario con sus pagos
+      final refinances = await _refinanceRepository.getRefinancesByDate(
+        routeId,
+        dateStr,
+      );
+
+      // Agrupar pagos por cliente
+      final paymentsByClient = <String, List<PaymentModel>>{};
+      for (final p in allPayments) {
+        paymentsByClient.putIfAbsent(p.clientId, () => []).add(p);
+      }
+
       _todayClients = clients.map((client) {
-        final matchingPayments = payments.where((p) => p.clientId == client.id);
-        final payment =
-            matchingPayments.isNotEmpty ? matchingPayments.first : null;
+        final clientPayments = paymentsByClient[client.id] ?? [];
         final scheduledPayment =
             scheduled.where((s) => s.clientId == client.id).firstOrNull;
+        final refinance =
+            refinances.where((r) => r.clientId == client.id).firstOrNull;
 
         return TodayClient(
           client: client,
-          payment: payment,
+          payments: clientPayments,
           scheduledPayment: scheduledPayment,
+          refinance: refinance,
         );
       }).toList();
 
-      // 5. Agregar clientes reagendados fuera del calendario
+      // Agregar clientes reagendados fuera del calendario
       final calendarIds = clients.map((c) => c.id).toSet();
       final extraScheduled =
           scheduled.where((s) => !calendarIds.contains(s.clientId));
 
       for (final sched in extraScheduled) {
-        final allClients = await _clientRepository.getClientsByRoute(routeId);
+        final allClients =
+            await _clientRepository.getClientsByRoute(routeId);
         final client =
             allClients.where((c) => c.id == sched.clientId).firstOrNull;
         if (client == null) continue;
 
-        final matchingPayments = payments.where((p) => p.clientId == client.id);
-        final payment =
-            matchingPayments.isNotEmpty ? matchingPayments.first : null;
+        final clientPayments = paymentsByClient[client.id] ?? [];
+        final refinance =
+            refinances.where((r) => r.clientId == client.id).firstOrNull;
 
         _todayClients.add(TodayClient(
           client: client,
-          payment: payment,
+          payments: clientPayments,
           scheduledPayment: sched,
+          refinance: refinance,
         ));
       }
     } catch (e) {
@@ -130,6 +151,7 @@ class TodayProvider extends ChangeNotifier {
     }
   }
 
+  /// Registra un nuevo pago — siempre inserta, permite múltiples pagos.
   Future<void> registerPayment(
     TodayClient todayClient,
     double amount,
@@ -139,29 +161,21 @@ class TodayProvider extends ChangeNotifier {
   }) async {
     try {
       final dateStr = _formatDate(_selectedDate);
-      final existing = await _paymentRepository.getPaymentByClientAndDate(
-        todayClient.client.id,
-        dateStr,
-      );
 
       final payment = PaymentModel(
-        id: existing?.id ?? const Uuid().v4(),
+        id: const Uuid().v4(),
         clientId: todayClient.client.id,
         routeId: _currentRouteId,
         amount: amount,
         status: PaymentStatus.paid,
         note: note,
         paymentDate: dateStr,
-        createdAt: existing?.createdAt ?? DateTime.now().toIso8601String(),
+        createdAt: DateTime.now().toIso8601String(),
         paymentMethod: paymentMethod,
         imagePath: imagePath,
       );
 
-      if (existing != null) {
-        await _paymentRepository.updatePayment(payment);
-      } else {
-        await _paymentRepository.insertPayment(payment);
-      }
+      await _paymentRepository.insertPayment(payment);
 
       // Eliminar reagendamiento si existe
       if (todayClient.scheduledPayment != null) {
@@ -170,7 +184,7 @@ class TodayProvider extends ChangeNotifier {
         );
       }
 
-      // Actualizar lista en memoria
+      // Actualizar en memoria
       final clientAlreadyInList = _todayClients.any(
         (tc) => tc.client.id == todayClient.client.id,
       );
@@ -179,8 +193,8 @@ class TodayProvider extends ChangeNotifier {
         _todayClients = _todayClients.map((tc) {
           if (tc.client.id == todayClient.client.id) {
             return tc.copyWith(
-              payment: payment,
-              clearScheduled: true,
+              payments: [...tc.payments, payment],
+              clearScheduled: todayClient.scheduledPayment != null,
             );
           }
           return tc;
@@ -190,7 +204,7 @@ class TodayProvider extends ChangeNotifier {
           ..._todayClients,
           TodayClient(
             client: todayClient.client,
-            payment: payment,
+            payments: [payment],
           ),
         ];
       }
@@ -203,37 +217,38 @@ class TodayProvider extends ChangeNotifier {
     }
   }
 
+  /// Registra "no dio" — solo si no hay pagos previos.
   Future<void> registerSkipped(
     TodayClient todayClient,
     String? justification,
   ) async {
     try {
+      // No permitir "no dio" si ya hay pagos
+      if (todayClient.isPaid) {
+        _errorMessage =
+            'No se puede registrar "no dio" si el cliente ya pagó';
+        notifyListeners();
+        return;
+      }
+
       final dateStr = _formatDate(_selectedDate);
-      final existing = await _paymentRepository.getPaymentByClientAndDate(
-        todayClient.client.id,
-        dateStr,
-      );
 
       final payment = PaymentModel(
-        id: existing?.id ?? const Uuid().v4(),
+        id: const Uuid().v4(),
         clientId: todayClient.client.id,
         routeId: _currentRouteId,
         amount: 0,
         status: PaymentStatus.skipped,
         note: justification,
         paymentDate: dateStr,
-        createdAt: existing?.createdAt ?? DateTime.now().toIso8601String(),
+        createdAt: DateTime.now().toIso8601String(),
       );
 
-      if (existing != null) {
-        await _paymentRepository.updatePayment(payment);
-      } else {
-        await _paymentRepository.insertPayment(payment);
-      }
+      await _paymentRepository.insertPayment(payment);
 
       _todayClients = _todayClients.map((tc) {
         if (tc.client.id == todayClient.client.id) {
-          return tc.copyWith(payment: payment);
+          return tc.copyWith(payments: [payment]);
         }
         return tc;
       }).toList();
@@ -246,19 +261,16 @@ class TodayProvider extends ChangeNotifier {
     }
   }
 
-  /// Reagenda el cobro de un cliente para una fecha futura.
   Future<void> reschedulePayment(
     TodayClient todayClient,
     DateTime scheduledDate,
     String? note,
   ) async {
     try {
-      // Eliminar reagendamiento anterior si existe
       await _scheduledRepository.deleteScheduledPaymentByClient(
         todayClient.client.id,
       );
 
-      // Crear nuevo reagendamiento
       final scheduled = ScheduledPaymentModel(
         id: const Uuid().v4(),
         clientId: todayClient.client.id,
@@ -270,7 +282,6 @@ class TodayProvider extends ChangeNotifier {
 
       await _scheduledRepository.insertScheduledPayment(scheduled);
 
-      // Actualizar en memoria
       _todayClients = _todayClients.map((tc) {
         if (tc.client.id == todayClient.client.id) {
           return tc.copyWith(scheduledPayment: scheduled);
@@ -282,77 +293,30 @@ class TodayProvider extends ChangeNotifier {
     } catch (e) {
       _errorMessage = 'No se pudo reagendar el cobro';
       notifyListeners();
-      debugPrint('Error reagendando cobro: $e');
+      debugPrint('Error reagendando: $e');
     }
   }
 
-  Future<void> undoPayment(TodayClient todayClient) async {
-    try {
-      if (todayClient.payment == null) return;
-      await _paymentRepository.deletePayment(todayClient.payment!.id);
-
-      _todayClients = _todayClients.map((tc) {
-        if (tc.client.id == todayClient.client.id) {
-          return tc.copyWith(clearPayment: true);
-        }
-        return tc;
-      }).toList();
-
-      notifyListeners();
-    } catch (e) {
-      _errorMessage = 'No se pudo deshacer el registro';
-      notifyListeners();
-      debugPrint('Error deshaciendo pago: $e');
-    }
-  }
-
-  /// Retorna clientes activos que NO están en la lista del día.
-  Future<List<ClientModel>> getClientsNotInList(String routeId) async {
-    try {
-      final allClients = await _clientRepository.getClientsByRoute(routeId);
-      final existingIds = _todayClients.map((tc) => tc.client.id).toSet();
-      return allClients.where((c) => !existingIds.contains(c.id)).toList();
-    } catch (e) {
-      debugPrint('Error obteniendo clientes fuera de lista: $e');
-      return [];
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.year}-'
-        '${date.month.toString().padLeft(2, '0')}-'
-        '${date.day.toString().padLeft(2, '0')}';
-  }
-
-  /// Registra un refinanciamiento para un cliente.
-  /// Si hay monto > 0 lo descuenta de la base del día.
-  /// Si es "Dar tiempo" actualiza los días de pago del cliente.
   Future<void> refinanceClient(
     TodayClient todayClient,
     RefinanceModel refinance, {
     Map<String, dynamic>? newPaymentDays,
   }) async {
     try {
-      // 1. Guardar el refinanciamiento
       await _refinanceRepository.insertRefinance(refinance);
 
-      // 2. Si hay monto descontarlo de la base del día
       if (refinance.amount > 0) {
         final dateStr = _formatDate(_selectedDate);
-        final existingBase = await _baseRepository.getBaseByDate(
-          _currentRouteId,
-          dateStr,
-        );
+        final existingBase =
+            await _baseRepository.getBaseByDate(_currentRouteId, dateStr);
 
         if (existingBase != null) {
-          // Descontar del monto actual
           await _baseRepository.updateBase(
             existingBase.copyWith(
               amount: existingBase.amount - refinance.amount,
             ),
           );
         } else {
-          // Crear base con monto negativo
           await _baseRepository.insertBase(
             DailyBaseModel(
               id: const Uuid().v4(),
@@ -365,14 +329,12 @@ class TodayProvider extends ChangeNotifier {
         }
       }
 
-      // 3. Si es "Dar tiempo" actualizar días de pago del cliente
       if (newPaymentDays != null) {
         await _clientRepository.updateClient(
           todayClient.client.copyWith(paymentDays: newPaymentDays),
         );
       }
 
-      // 4. Actualizar en memoria
       _todayClients = _todayClients.map((tc) {
         if (tc.client.id == todayClient.client.id) {
           return tc.copyWith(refinance: refinance);
@@ -384,7 +346,55 @@ class TodayProvider extends ChangeNotifier {
     } catch (e) {
       _errorMessage = 'No se pudo registrar el refinanciamiento';
       notifyListeners();
-      debugPrint('Error refinanciando cliente: $e');
+      debugPrint('Error refinanciando: $e');
     }
+  }
+
+  Future<void> undoPayment(TodayClient todayClient) async {
+    try {
+      // Eliminar el último pago
+      final lastPayment = todayClient.lastPayment;
+      if (lastPayment == null) return;
+
+      await _paymentRepository.deletePayment(lastPayment.id);
+
+      final updatedPayments = todayClient.payments
+          .where((p) => p.id != lastPayment.id)
+          .toList();
+
+      _todayClients = _todayClients.map((tc) {
+        if (tc.client.id == todayClient.client.id) {
+          return tc.copyWith(payments: updatedPayments);
+        }
+        return tc;
+      }).toList();
+
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'No se pudo deshacer el registro';
+      notifyListeners();
+      debugPrint('Error deshaciendo pago: $e');
+    }
+  }
+
+  Future<List<ClientModel>> getClientsNotInList(String routeId) async {
+    try {
+      final allClients =
+          await _clientRepository.getClientsByRoute(routeId);
+      final existingIds =
+          _todayClients.map((tc) => tc.client.id).toSet();
+      return allClients
+          .where((c) => !existingIds.contains(c.id))
+          .toList();
+    } catch (e) {
+      debugPrint('Error obteniendo clientes fuera de lista: $e');
+      return [];
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year}-'
+        '${date.month.toString().padLeft(2, '0')}-'
+        '${date.day.toString().padLeft(2, '0')}';
   }
 }

@@ -62,6 +62,27 @@ class TodaySummaryCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
+              // Después del monto total y antes de la barra de progreso
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildMethodTotal(
+                      label: 'Efectivo',
+                      amount: provider.totalCash,
+                      icon: Icons.payments_outlined,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildMethodTotal(
+                      label: 'Transferencia',
+                      amount: provider.totalTransfer,
+                      icon: Icons.phone_android_outlined,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
               _buildProgress(context, provider, progress, done, total),
               const SizedBox(height: 12),
               Row(
@@ -102,7 +123,6 @@ class TodaySummaryCard extends StatelessWidget {
     int done,
     int total,
   ) {
-
     return ClipRRect(
       borderRadius: BorderRadius.circular(4),
       child: LinearProgressIndicator(
@@ -138,6 +158,48 @@ class TodaySummaryCard extends StatelessWidget {
               color: color,
               fontSize: 11,
               fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMethodTotal({
+    required String label,
+    required double amount,
+    required IconData icon,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: Colors.white.withValues(alpha: 0.6)),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.white.withValues(alpha: 0.6),
+                  ),
+                ),
+                Text(
+                  Formatters.formatAmount(amount),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
