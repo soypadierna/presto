@@ -9,6 +9,27 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ### Agregado
 - Múltiples pagos por cliente en el mismo día agrupados por método
+- Swipe derecho en tiles pagados para agregar otro pago
+- Badges de desglose en tile cuando hay pagos en efectivo y transferencia
+- Totales por efectivo y transferencia en TodaySummaryCard
+- Desglose por método de pago en el informe del día
+- "Agregar pago" en menú contextual si el cliente ya pagó
+
+### Mejorado
+- TodayClient usa `List<PaymentModel>` en lugar de `PaymentModel?`
+- `registerPayment` siempre inserta un nuevo registro — nunca reemplaza
+- `undoPayment` elimina solo el último pago registrado
+- Key del Dismissible incluye `payments.length` para forzar recreación del widget
+
+### Corregido
+- "No dio" bloqueado si el cliente ya tiene pagos registrados
+
+---
+
+## [2.7.0] - 2026-04-06
+
+### Agregado
+- Múltiples pagos por cliente en el mismo día agrupados por método
 - Badges de desglose en tile cuando hay pagos en efectivo y transferencia
 - Totales por efectivo y transferencia en TodaySummaryCard
 - Desglose por método en el informe del día

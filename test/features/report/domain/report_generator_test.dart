@@ -120,15 +120,6 @@ TodayClient _makeTodayClient({
       isActive: true,
       createdAt: DateTime.now().toIso8601String(),
     ),
-    payment: PaymentModel(
-      id: 'payment-${name.hashCode}',
-      clientId: 'client-${name.hashCode}',
-      routeId: 'route-id',
-      amount: amount,
-      status: status,
-      paymentDate: '2026-03-15',
-      createdAt: DateTime.now().toIso8601String(),
-    ),
   );
 }
 
