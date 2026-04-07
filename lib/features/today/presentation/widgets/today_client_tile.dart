@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:presto/core/utils/dark_mode_helper.dart';
 import 'package:presto/features/clients/domain/client_model.dart';
 import 'package:provider/provider.dart';
 import '../../domain/today_client.dart';
@@ -114,44 +115,34 @@ class TodayClientTile extends StatelessWidget {
 
     if (todayClient.isPaid) {
       return _circle(
-        bg: isDark
-            ? const Color(0xFF1A2E10) // dark — verde muy oscuro
-            : const Color(0xFF3B6D11), // light — c-green 600
-        child: _svgCheck(Colors.white),
+        bg: DarkModeHelper.paidIconBackground(context),
+        child: _svgCheck(Colors.green.shade400),
       );
     }
 
     if (todayClient.isSkipped) {
       return _circle(
-        bg: isDark
-            ? const Color(0xFF2E1212) // dark — rojo muy oscuro
-            : const Color(0xFFA32D2D), // light — c-red 600
-        child: _svgX(Colors.white),
+        bg: DarkModeHelper.skippedIconBackground(context),
+        child: _svgX(Colors.red.shade400),
       );
     }
 
     if (todayClient.isRefinanced) {
       return _circle(
-        bg: isDark
-            ? const Color(0xFF2A1E08) // dark — ámbar muy oscuro
-            : const Color(0xFF854F0B), // light — c-amber 600
-        child: _svgRefresh(Colors.white),
+        bg: DarkModeHelper.refinancedIconBackground(context),
+        child: _svgRefresh(Colors.amber.shade600),
       );
     }
 
     // Pendiente y reagendado — número de orden
     return _circle(
-      bg: isDark
-          ? const Color(0xFF444441) // c-gray 700
-          : const Color(0xFFE8E6DF),
+      bg: isDark ? const Color(0xFF444441) : const Color(0xFFE8E6DF),
       child: Text(
         '${_orderNumber()}',
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: isDark
-              ? const Color(0xFFB4B2A9) // c-gray 200
-              : const Color(0xFF5F5E5A), // c-gray 600
+          color: isDark ? const Color(0xFFB4B2A9) : const Color(0xFF5F5E5A),
         ),
       ),
     );
@@ -661,51 +652,27 @@ class TodayClientTile extends StatelessWidget {
   }
 
   Color _tileBackground(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    if (todayClient.isPaid) {
-      return isDark
-          ? const Color(0xFF173404) // c-green 900
-          : const Color(0xFF97C459); // c-green 200
-    }
-    if (todayClient.isSkipped) {
-      return isDark
-          ? const Color(0xFF501313) // c-red 900
-          : const Color(0xFFF09595); // c-red 200
-    }
+    if (todayClient.isPaid) return DarkModeHelper.paidBackground(context);
+    if (todayClient.isSkipped) return DarkModeHelper.skippedBackground(context);
     if (todayClient.isRefinanced) {
-      return isDark
-          ? const Color(0xFF412402) // c-amber 900
-          : const Color(0xFFEF9F27); // c-amber 200
+      return DarkModeHelper.refinancedBackground(context);
     }
-
-    // Pendiente y reagendado
-    return isDark ? const Color(0xFF2C2C2A) : const Color(0xFFFFFFFF);
+    if (todayClient.isRescheduled) {
+      return DarkModeHelper.rescheduledBackground(context);
+    }
+    return Theme.of(context).colorScheme.surface;
   }
 
   Color _tileBorder(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    if (todayClient.isPaid) {
-      return isDark
-          ? const Color(0xFF3B6D11) // c-green 600
-          : const Color(0xFF639922); // c-green 400
-    }
-    if (todayClient.isSkipped) {
-      return isDark
-          ? const Color(0xFFA32D2D) // c-red 600
-          : const Color(0xFFE24B4A); // c-red 400
-    }
+    if (todayClient.isPaid) return DarkModeHelper.paidBorder(context);
+    if (todayClient.isSkipped) return DarkModeHelper.skippedBorder(context);
     if (todayClient.isRefinanced) {
-      return isDark
-          ? const Color(0xFF854F0B) // c-amber 600
-          : const Color(0xFFBA7517); // c-amber 400
+      return DarkModeHelper.refinancedBorder(context);
     }
-
-    // Pendiente y reagendado
-    return isDark
-        ? const Color(0xFF444441)
-        : const Color(0xFFD3D1C7); // c-gray 100
+    if (todayClient.isRescheduled) {
+      return DarkModeHelper.rescheduledBorder(context);
+    }
+    return Theme.of(context).colorScheme.outline.withValues(alpha: 0.2);
   }
 }
 
